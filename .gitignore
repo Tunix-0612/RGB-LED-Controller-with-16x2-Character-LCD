@@ -1,0 +1,22 @@
+# ==========================================
+# 1. Yazılım (Firmware) Ayarları
+# ==========================================
+# firmware içindeki her şeyi engelle
+firmware/*
+
+# Ama altındaki klasör yapılarını aramaya devam et
+!firmware/src/
+!firmware/platformio.ini
+
+# ==========================================
+# 2. Donanım (Hardware) Ayarları
+# ==========================================
+# hardware içindeki her şeyi engelle
+hardware/*
+
+# Ama output klasörünü istisna tut (içeriği yüklensin)
+!hardware/output/
+
+# Altium'un en dış dizinde açabileceği ekstra klasörleri engelle
+Reports/
+Road Maps/

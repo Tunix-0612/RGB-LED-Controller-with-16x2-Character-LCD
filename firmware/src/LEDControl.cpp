@@ -1,0 +1,106 @@
+#include "WString.h"
+#include "LEDControl.h"
+#include "TunixMemoryManager.h"
+#include "Display.h"
+
+LEDControllerSystem::LEDControllerSystem() { }
+
+void LEDControllerSystem::RGBColorApply(byte targetRed, byte targetGreen, byte targetBlue)
+{
+  if(ledOff == true)
+  {
+    analogWrite(RGB_R_PIN, 0);
+    analogWrite(RGB_G_PIN, 0);
+    analogWrite(RGB_B_PIN, 0);
+    return;
+  }
+  uint16_t scaledRed = ((uint16_t)targetRed * ledBrightness) / 255;
+  uint16_t scaledGreen = ((uint16_t)targetGreen * ledBrightness) / 255;
+  uint16_t scaledBlue = ((uint16_t)targetBlue * ledBrightness) / 255;
+  analogWrite(RGB_R_PIN, scaledRed);
+  analogWrite(RGB_G_PIN, scaledGreen);
+  analogWrite(RGB_B_PIN, scaledBlue);
+  return;
+}
+
+void LEDControllerSystem::fadeAnimationEngine()
+{
+  bool colorChanged = false;
+  if (currentRed < memory.activeConfig.R) 
+  {
+    currentRed++;
+    colorChanged = true;
+  } 
+  else if (currentRed > memory.activeConfig.R) 
+  {
+    currentRed--;
+    colorChanged = true;
+  }
+  if (currentGreen < memory.activeConfig.G) 
+  {
+    currentGreen++;
+    colorChanged = true;
+  } 
+  else if (currentGreen > memory.activeConfig.G) 
+  {
+    currentGreen--;
+    colorChanged = true;
+  }
+  if (currentBlue < memory.activeConfig.B) 
+  {
+    currentBlue++;
+    colorChanged = true;
+  } 
+  else if (currentBlue > memory.activeConfig.B) 
+  {
+    currentBlue--;
+    colorChanged = true;
+  }
+  lcd.setCursor(15, 0);
+  if (colorChanged) 
+  {
+    if (!wasAnimating)
+    {
+      lcd.setCursor(15, 0);
+      lcd.write((byte)4);
+      wasAnimating = true;
+    }
+    RGBColorApply(currentRed, currentGreen, currentBlue);
+  }
+  else if (wasAnimating)
+  {
+    lcd.setCursor(15, 0);
+    lcd.write(32); 
+    wasAnimating = false;
+  }
+  return;
+}
+
+void LEDControllerSystem::RGBBrigthnessRead()
+{
+  ledBrightness = memory.readBrightnessForMode(memory.settings.selectedBrightness);
+  return;
+}
+
+void LEDControllerSystem::ledChange()
+{
+  ledOff = !ledOff;
+  RGBColorApply(currentRed, currentGreen, currentBlue);
+  lcd.display();
+  analogWrite(LCD_BACKLIGHT_PIN, memory.settings.lcdBacklight);
+  lcd.clear();
+  lcd.setCursor(3, 0);
+  if(ledOff) lcd.print(F("LEDs OFF"));
+  else lcd.print(F("LEDs ON"));
+  delay(750);
+  lcd.clear();
+  return;
+}
+
+bool LEDControllerSystem::getLEDState()
+{
+  if (ledOff) return true;
+  else return false;
+}
+
+byte LEDControllerSystem::getLEDBrightness() { return ledBrightness; }
