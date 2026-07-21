@@ -10,7 +10,7 @@ unsigned long MenuSystem::uptimeFlag = 0;
 
 MenuSystem::MenuSystem() { }
 
-void MenuSystem::updateClockAndControl() 
+bool MenuSystem::updateClockAndControl() 
 {
   unsigned long currentMillis = millis();
 
@@ -21,7 +21,7 @@ void MenuSystem::updateClockAndControl()
     if (currentTime >= 1440) currentTime = 0;
   }
 
-  if (currentMillis - lastControlMillis < 10000UL) return;
+  if (currentMillis - lastControlMillis < 10000UL) return false;
   lastControlMillis = currentMillis;
 
   bool inInterval = (memory.settings.startTime < memory.settings.endTime) 
@@ -33,7 +33,9 @@ void MenuSystem::updateClockAndControl()
     lastIntervalState = inInterval;
     
     if (inInterval == LEDController.getLEDState()) LEDController.ledChange();
+    return true;
   }
+  return false;
 }
 
 void MenuSystem::infoDisplayWrite()
@@ -57,6 +59,7 @@ void MenuSystem::infoDisplay()
 {
   while (digitalRead(BUTTON_LEFT) == LOW);
   infoDisplayWrite();
+  timeOut = 0;
   while (1) 
   {
     delay(5);
@@ -131,22 +134,28 @@ void MenuSystem::infoDisplay()
       infoDisplayWrite();
     }
     timeOut++;
-    updateClockAndControl();
     delay(2);
-    if (timeOut == 1500) idleScreen();
+    if (timeOut > 1500) idleScreen();
   }
 }
 
-void MenuSystem::idleScreen() 
+void MenuSystem::idleTextPrint()
 {
-  timeOut = 0;
-  memory.saveBasicMemory();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(memory.settings.idleTextUp);
   lcd.setCursor(0, 1);
   lcd.print(memory.settings.idleTextBottom);
+}
+
+void MenuSystem::idleScreen() 
+{
+  timeOut = 0;
+  unsigned long lastClockBlinkMillis = 0;
+  bool clockBlinkState = false;
+  memory.saveBasicMemory();
   short longPressCounter = 0;
+  idleTextPrint();
   while (true) 
   {
     if (digitalRead(BUTTON_UP) == LOW || digitalRead(BUTTON_DOWN) == LOW || digitalRead(BUTTON_RIGHT) == LOW) break;
@@ -197,9 +206,23 @@ void MenuSystem::idleScreen()
     }
     oldUptime = uptime;
     delay(10);
-    updateClockAndControl();
+
+    bool LEDChanged = updateClockAndControl();
+    if (LEDChanged) idleTextPrint();
+
     uptime = millis();
     if (uptime < oldUptime) uptimeFlag++;
+
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastClockBlinkMillis >= 750 && !coldBootClockSet) 
+    {
+      lastClockBlinkMillis = currentMillis;
+      clockBlinkState = !clockBlinkState;
+
+      lcd.setCursor(15, 0); 
+      if (clockBlinkState) lcd.write(4);
+      else lcd.print(F(" "));
+    }
     timeOut++;
   }
   while (digitalRead(BUTTON_UP) == LOW || digitalRead(BUTTON_DOWN) == LOW || digitalRead(BUTTON_RIGHT) == LOW || digitalRead(BUTTON_LEFT) == LOW);
@@ -657,11 +680,13 @@ void MenuSystem::setClockMenuWrite()
   lcd.write(3);
 }
 
-void MenuSystem::setClockMenu() 
+void MenuSystem::setClockMenu(bool coldBoot) 
 {
-  while (digitalRead(BUTTON_RIGHT) == LOW);
+  if (!coldBoot) while (digitalRead(BUTTON_RIGHT) == LOW);
   setClockMenuWrite();
-  
+  int16_t maxTimeout = coldBoot ? 6000 : 1000;
+  timeOut = 0;
+
   while (digitalRead(BUTTON_LEFT) == HIGH)
   {
     bool timeChanged = false;
@@ -676,7 +701,7 @@ void MenuSystem::setClockMenu()
     {
       timeOut = 0;
       currentTime -= 1;
-      if (currentTime < 0) currentTime = 1425;
+      if (currentTime < 0) currentTime = 1439;
       timeChanged = true;
     }
     if (timeChanged) 
@@ -686,14 +711,14 @@ void MenuSystem::setClockMenu()
     }
     delay(10);
     timeOut++;
-    if (timeOut > 1000) break;
+    if (timeOut > maxTimeout) break;
   }
-  
+  if (!coldBootClockSet && timeOut < maxTimeout) coldBootClockSet = true;
   while (digitalRead(BUTTON_LEFT) == LOW); 
   lcd.setCursor(15, 1);
   lcd.write(5);
   delay(1000);
-  settingsMenuWrite();
+  if (!coldBoot) settingsMenuWrite();
 }
 
 void MenuSystem::createNewRGBConfigMenu() 
@@ -826,7 +851,7 @@ void MenuSystem::settingsMenu()
       switch (settingsMenuCursor) 
       {
         case 1:  RGBConfigMenu();           break;
-        case 2:  setClockMenu();            break;
+        case 2:  setClockMenu(false);       break;
         case 3:  idleScreenTextMenu();      break;
         case 4:  brightnessMenu();          break;
         case 5:  LDRManagementMenu();       break;

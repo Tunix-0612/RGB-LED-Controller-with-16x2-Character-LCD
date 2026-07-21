@@ -7,6 +7,7 @@ class MenuSystem
 {
   private:
     static unsigned long uptime, oldUptime, uptimeFlag;
+    bool coldBootClockSet;
     unsigned long lastMinuteMillis = 0;
     unsigned long lastControlMillis = 0;
     bool lastIntervalState = false;
@@ -22,7 +23,7 @@ class MenuSystem
     bool LDRActivated;
     bool LDRDisabled = false;
 
-    void updateClockAndControl();
+    bool updateClockAndControl();
     void infoDisplayWrite();
     void RGBConfigMenuWrite();
     void brightnessMenuWrite();
@@ -42,15 +43,16 @@ class MenuSystem
     void screenOffStateMenu();
     void LDRManagementMenu();
     void timerSettingsMenu();
-    void setClockMenu();
     void createNewRGBConfigMenu();
     void settingsMenu();
+    void idleTextPrint();
 
   public:
     MenuSystem();
 
     void infoDisplay();
     void idleScreen();
+    void setClockMenu(bool coldBoot);
 };
 
 extern MenuSystem menu;

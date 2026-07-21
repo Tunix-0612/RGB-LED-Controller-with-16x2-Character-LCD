@@ -3,39 +3,32 @@
     RGB LED and 2x16LCD Controller
     12/11/2025 - x
     Arduino Nano
-    Version 1.4.3 Stable - Build.26.7.F
-    Update Name --- OBJECT ORIENTED REFACTORING & DIAGNOSTICS
+    Version 1.4.4-Build.26.7.G
+    Update Name --- POWER LOSS LOGIC & INTELLIGENT BOOTSTRAPPING
 
     ---------------------------------------------------------
     CHANGELOG
     ---------------------------------------------------------
     [Added]
-    - 
+    - Cold Boot set clock screen has been added, used the same function with the settings menus' but with variable timeOut.
 
     [Changed]
-    - Setting Menu's main text data has been migrated to Display.cpp
-    - Setting Menu's text processing has been modified with F() macros for better RAM optimization
-      This resulted in +626 bytes of RAM
-    - Setting Menu's main text is now read with new method using pointers and AVR functions
-      This resulted in ~+100 bytes of FLASH MEM
-    - Setting Menu's detection of next menu is now controlled with switch-case instead of indivudual if blocks
-      This resulted in +380 bytes of FLASH MEM
-    - Optimized the internal clock
+    - infoScreen now resets the timeOut at start
+    - infoScreen's timeOut check to send the device to idle now checks for ..> 1500 instad of ..== 1500
 
     [Removed]
-    - digitalWrite commands has been removed and used analogWrite instead
+    - Trıggering LED Change with internal clock at info display has been removed as info display is waiting for user input.
 
     [Fixed]
-    - Special Character's visual bug fixed with new method of loading them into LCD's memory
-    - Fixed the visual bug on Lighting Fade Effect
-    - Possible clock overflow resulting in internal clock stops after 47 days has been fixed
+    - Internal clock jump to 23:45 from 00:00 when decreasing has been fixed.
+    - Blank LCD after LED Change triggered has been fixed.
 
-    [v1.4.3] - SYSTEM PURIFICATION & RE-OPTIMIZATION
+    [v1.4.4] - POWER LOSS LOGIC & INTELLIGENT BOOTSTRAPPING
     --------------------------------------------------------------------------------
-    * Hotfix deployment dedicated to the v1.4.2 OOP structural transformation.
-    * Deep refactoring of scope: Localization of global variables to diminish SRAM footprints.
-    * Advanced optimization of data types (Byte conversion pass to minimize structural footprints).
-    ---------------------------------------------------------
+    * Implementation of volatile time loss detection mechanism (Asynchronous RTC emulator alert).
+    * UI Warning Signal: Flashing clock icon on 'idleScreen' and 'infoDisplay' upon sudden cold boots.
+    * Smart Boot Architecture: Timed intercept block on startup for manual clock entry; 
+      graceful fallback to predefined defaults upon timeout expiration.
 
     (16 - L) / 2 --- Center text function
 */
@@ -87,6 +80,8 @@ void setup()
   if (selfTestValue != 0) errorManager.errorHandler(selfTestValue);
   memory.loadRGBConfig(memory.settings.selectedConfig);
   LEDController.RGBBrigthnessRead();
+  menu.setClockMenu(true);
+  lcd.clear();
   menu.infoDisplay();
 }
 

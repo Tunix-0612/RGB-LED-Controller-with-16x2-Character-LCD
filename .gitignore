@@ -20,3 +20,5 @@ hardware/*
 # Altium'un en dış dizinde açabileceği ekstra klasörleri engelle
 Reports/
 Road Maps/
+
+RGBLED_and_2x16LCD_Controller.code-workspace
