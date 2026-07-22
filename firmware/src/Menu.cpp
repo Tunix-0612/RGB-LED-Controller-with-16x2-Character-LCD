@@ -71,7 +71,6 @@ void MenuSystem::infoDisplay()
       else memory.settings.selectedConfig--;
 
       memory.loadRGBConfig(memory.settings.selectedConfig);
-      //LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
       infoDisplayWrite();
     }
     if (digitalRead(BUTTON_DOWN) == LOW) 
@@ -82,7 +81,6 @@ void MenuSystem::infoDisplay()
       if (memory.settings.selectedConfig >= memory.settings.totalConfig) memory.settings.selectedConfig = 0;
 
       memory.loadRGBConfig(memory.settings.selectedConfig);
-      //LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
       infoDisplayWrite();
     }
 

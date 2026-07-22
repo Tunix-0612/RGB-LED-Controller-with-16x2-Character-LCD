@@ -3,32 +3,27 @@
     RGB LED and 2x16LCD Controller
     12/11/2025 - x
     Arduino Nano
-    Version 1.4.4-Build.26.7.G
-    Update Name --- POWER LOSS LOGIC & INTELLIGENT BOOTSTRAPPING
+    Version 1.4.5-Build.26.7.H
+    Update Name --- HOT-FIX
 
     ---------------------------------------------------------
     CHANGELOG
     ---------------------------------------------------------
     [Added]
-    - Cold Boot set clock screen has been added, used the same function with the settings menus' but with variable timeOut.
+    - 
 
     [Changed]
-    - infoScreen now resets the timeOut at start
-    - infoScreen's timeOut check to send the device to idle now checks for ..> 1500 instad of ..== 1500
+    - 
 
     [Removed]
-    - Trıggering LED Change with internal clock at info display has been removed as info display is waiting for user input.
+    - Removed unused code
 
     [Fixed]
-    - Internal clock jump to 23:45 from 00:00 when decreasing has been fixed.
-    - Blank LCD after LED Change triggered has been fixed.
+    - Fixed device version miss registered
 
-    [v1.4.4] - POWER LOSS LOGIC & INTELLIGENT BOOTSTRAPPING
+    [v1.4.5] - HOT-FIX
     --------------------------------------------------------------------------------
-    * Implementation of volatile time loss detection mechanism (Asynchronous RTC emulator alert).
-    * UI Warning Signal: Flashing clock icon on 'idleScreen' and 'infoDisplay' upon sudden cold boots.
-    * Smart Boot Architecture: Timed intercept block on startup for manual clock entry; 
-      graceful fallback to predefined defaults upon timeout expiration.
+    * Fix Errors
 
     (16 - L) / 2 --- Center text function
 */
