@@ -3,27 +3,29 @@
     RGB LED and 2x16LCD Controller
     12/11/2025 - x
     Arduino Nano
-    Version 1.4.5-Build.26.7.H
-    Update Name --- HOT-FIX
+    Version 1.4.6-Build.26.7.I
+    USER INTERACTION & INPUT ABSTRACT LAYER
+    --------------------------------------------------------------------------------
+    * Complete overhaul of button handling routines and hardware debouncing algorithms.
+    * General UI aesthetics upgrade, transition smoothing, and template-driven menu modules.
 
     ---------------------------------------------------------
     CHANGELOG
     ---------------------------------------------------------
     [Added]
-    - 
+    - LDR Check now has it's own separate function.
+    - Two new files: InputManager.h/.cpp has been added for complete overhaul of button event manage.
 
     [Changed]
-    - 
+    - LDR Check procedure has been changed.
+    - All menu functions has been updated to be in match with new button logics.
 
     [Removed]
-    - Removed unused code
+    - Some old commands deleted for cleanup.
 
     [Fixed]
-    - Fixed device version miss registered
+    - 
 
-    [v1.4.5] - HOT-FIX
-    --------------------------------------------------------------------------------
-    * Fix Errors
 
     (16 - L) / 2 --- Center text function
 */
@@ -35,6 +37,7 @@
 #include "TunixErrorManager.h"
 #include "TunixMemoryManager.h"
 #include "TunixSelfTest.h"
+#include "InputManager.h"
 
 TunixSelfTest deviceTest;
 TunixMemoryManager memory(1024);
@@ -43,6 +46,7 @@ TunixErrorManager errorManager;
 DisplayManagerSystem display;
 LEDControllerSystem LEDController;
 MenuSystem menu;
+InputManager inputManager(BUTTON_UP, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT);
 
 void introductionDisplay()
 {
@@ -58,10 +62,7 @@ void introductionDisplay()
 
 void setup() 
 {
-  pinMode(BUTTON_UP, INPUT_PULLUP);
-  pinMode(BUTTON_DOWN, INPUT_PULLUP);
-  pinMode(BUTTON_RIGHT, INPUT_PULLUP);
-  pinMode(BUTTON_LEFT, INPUT_PULLUP);
+  inputManager.begin();
   pinMode(RGB_R_PIN, OUTPUT);
   pinMode(RGB_G_PIN, OUTPUT);
   pinMode(RGB_B_PIN, OUTPUT);

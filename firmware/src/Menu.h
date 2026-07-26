@@ -24,6 +24,7 @@ class MenuSystem
     bool LDRDisabled = false;
 
     bool updateClockAndControl();
+    bool checkLDR();
     void infoDisplayWrite();
     void RGBConfigMenuWrite();
     void brightnessMenuWrite();

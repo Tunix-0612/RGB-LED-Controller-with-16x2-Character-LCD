@@ -3,6 +3,7 @@
 #include "Display.h"
 #include "TunixMemoryManager.h"
 #include "LEDControl.h"
+#include "InputManager.h"
 
 unsigned long MenuSystem::uptime = 0;
 unsigned long MenuSystem::oldUptime = 0;
@@ -38,6 +39,23 @@ bool MenuSystem::updateClockAndControl()
   return false;
 }
 
+bool MenuSystem::checkLDR()
+{
+  if (LDRActivated || LDRDisabled) return false; 
+
+  LDRValue = analogRead(LDR_PIN);
+  
+  if (LDRValue > memory.settings.LDRLimit && LEDController.getLEDState()) 
+  {
+    LEDController.ledChange();
+    LDRActivated = true;
+    LDRDisabled = true;
+
+    return true;
+  }
+  return false;
+}
+
 void MenuSystem::infoDisplayWrite()
 {
   lcd.setCursor(0, 0);
@@ -57,15 +75,18 @@ void MenuSystem::infoDisplayWrite()
 
 void MenuSystem::infoDisplay() 
 {
-  while (digitalRead(BUTTON_LEFT) == LOW);
   infoDisplayWrite();
   timeOut = 0;
-  while (1) 
+  while (true) 
   {
-    delay(5);
-    if (digitalRead(BUTTON_UP) == LOW) 
+    inputManager.update();
+    ButtonEvent eventUp    = inputManager.getEvent(BTN_UP);
+    ButtonEvent eventDown  = inputManager.getEvent(BTN_DOWN);
+    ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
+    ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
+
+    if(eventUp == BTN_EVENT_CLICK)
     {
-      while (digitalRead(BUTTON_UP) == LOW);
       timeOut = 0;
       if (memory.settings.selectedConfig == 0) memory.settings.selectedConfig = memory.settings.totalConfig - 1;
       else memory.settings.selectedConfig--;
@@ -73,9 +94,9 @@ void MenuSystem::infoDisplay()
       memory.loadRGBConfig(memory.settings.selectedConfig);
       infoDisplayWrite();
     }
-    if (digitalRead(BUTTON_DOWN) == LOW) 
+
+    if(eventDown == BTN_EVENT_CLICK)
     {
-      while (digitalRead(BUTTON_DOWN) == LOW);
       timeOut = 0;
       memory.settings.selectedConfig++;
       if (memory.settings.selectedConfig >= memory.settings.totalConfig) memory.settings.selectedConfig = 0;
@@ -84,53 +105,33 @@ void MenuSystem::infoDisplay()
       infoDisplayWrite();
     }
 
-    if (digitalRead(BUTTON_LEFT) == LOW) 
+    if(eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
-      short longPressCounter = 0;
-      bool longPress = false;
-      delay(50);
-      while (digitalRead(BUTTON_LEFT) == LOW) 
-      {
-        longPressCounter++;
-        if (longPressCounter >= 100) 
-        {
-          longPress = true;
-          LEDController.ledChange();
-          while (digitalRead(BUTTON_LEFT) == LOW);
-          lcd.clear();
-          infoDisplayWrite();
-          break;
-        }
-        delay(5);
-      }
-      if (longPress == false) 
-      {
-        memory.settings.selectedBrightness++;
-        memory.settings.selectedBrightness = constrain(memory.settings.selectedBrightness, 1, 5);
-        if (memory.settings.selectedBrightness == 5) memory.settings.selectedBrightness = 1;
-        memory.saveBasicMemory();
-        LEDController.RGBBrigthnessRead();
-        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
-        infoDisplayWrite();
-      }
+      memory.settings.selectedBrightness++;
+      if (memory.settings.selectedBrightness > 4) memory.settings.selectedBrightness = 1;
+      LEDController.RGBBrigthnessRead();
+      LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+      infoDisplayWrite();
     }
-    if (digitalRead(BUTTON_RIGHT) == LOW) 
+
+    if (eventLeft == BTN_EVENT_LONG_PRESS)
     {
-      while (digitalRead(BUTTON_RIGHT) == LOW);
+      timeOut = 0;
+      LEDController.ledChange();
+      infoDisplayWrite();
+    }
+
+    if (eventRight == BTN_EVENT_CLICK)
+    {
       timeOut = 0;
       settingsMenu();
     }
+
     LEDController.fadeAnimationEngine();
-    LDRValue = analogRead(LDR_PIN);
-    bool LEDState = LEDController.getLEDState();
-    if ((LDRValue > memory.settings.LDRLimit) && (LEDState == true) && (LDRActivated == false) && (LDRDisabled == false)) 
-    {
-      LEDController.ledChange();
-      LDRActivated = true;
-      LDRDisabled = true;
-      infoDisplayWrite();
-    }
+    
+    checkLDR();
+
     timeOut++;
     delay(2);
     if (timeOut > 1500) idleScreen();
@@ -152,61 +153,48 @@ void MenuSystem::idleScreen()
   unsigned long lastClockBlinkMillis = 0;
   bool clockBlinkState = false;
   memory.saveBasicMemory();
-  short longPressCounter = 0;
   idleTextPrint();
   while (true) 
   {
-    if (digitalRead(BUTTON_UP) == LOW || digitalRead(BUTTON_DOWN) == LOW || digitalRead(BUTTON_RIGHT) == LOW) break;
-    if (digitalRead(BUTTON_LEFT) == LOW) 
+    inputManager.update();
+    ButtonEvent eventUp    = inputManager.getEvent(BTN_UP);
+    ButtonEvent eventDown  = inputManager.getEvent(BTN_DOWN);
+    ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
+    ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
+    
+    if (eventUp == BTN_EVENT_CLICK || eventDown == BTN_EVENT_CLICK || eventRight == BTN_EVENT_CLICK) break;
+    
+    if (eventLeft == BTN_EVENT_CLICK)
     {
-      longPressCounter = 0;
-      while (digitalRead(BUTTON_LEFT) == LOW) 
-      {
-        longPressCounter++;
-        if (longPressCounter >= 100) 
-        {
-          LEDController.ledChange();
-          lcd.print(memory.settings.idleTextUp);
-          lcd.setCursor(0, 1);
-          lcd.print(memory.settings.idleTextBottom);
-          while (digitalRead(BUTTON_LEFT) == LOW);
-          longPressCounter = 0;
-          timeOut = 0;
-        }
-        delay(10);
-      }
-      if (longPressCounter < 100 && longPressCounter > 0) 
-      {
-        memory.settings.selectedBrightness++;
-        memory.settings.selectedBrightness = constrain(memory.settings.selectedBrightness, 1, 5);
-        if (memory.settings.selectedBrightness == 5) memory.settings.selectedBrightness = 1;
-        memory.saveBasicMemory();
-        LEDController.RGBBrigthnessRead();
-        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
-        timeOut = 0;
-      }
+      timeOut = 0;
+      memory.settings.selectedBrightness++;
+      if (memory.settings.selectedBrightness > 4) memory.settings.selectedBrightness = 1;
+      memory.saveBasicMemory();
+      LEDController.RGBBrigthnessRead();
+      LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
     }
+
+    if (eventLeft == BTN_EVENT_LONG_PRESS)
+    {
+      timeOut = 0;
+      LEDController.ledChange();
+      idleTextPrint();
+    }
+
     if ((timeOut >= 1500) && (memory.settings.screenOffState == true)) 
     {
       analogWrite(LCD_BACKLIGHT_PIN, 0);
       lcd.noDisplay();
     }
     if ((timeOut >= 1500) && (memory.settings.screenOffState == false)) analogWrite(LCD_BACKLIGHT_PIN, 20);
-    LDRValue = analogRead(LDR_PIN);
-    bool LEDState = LEDController.getLEDState();
-    if ((LDRValue > memory.settings.LDRLimit) && (LEDState == true) && (LDRActivated == false)) 
-    {
-      LEDController.ledChange();
-      lcd.print(memory.settings.idleTextUp);
-      lcd.setCursor(0, 1);
-      lcd.print(memory.settings.idleTextBottom);
-      LDRActivated = true;
-    }
-    oldUptime = uptime;
-    delay(10);
 
-    bool LEDChanged = updateClockAndControl();
-    if (LEDChanged) idleTextPrint();
+    oldUptime = uptime;
+    
+    if (checkLDR()) idleTextPrint();
+
+    bool LEDState = LEDController.getLEDState();
+
+    if (updateClockAndControl()) idleTextPrint();
 
     uptime = millis();
     if (uptime < oldUptime) uptimeFlag++;
@@ -223,12 +211,12 @@ void MenuSystem::idleScreen()
     }
     timeOut++;
   }
-  while (digitalRead(BUTTON_UP) == LOW || digitalRead(BUTTON_DOWN) == LOW || digitalRead(BUTTON_RIGHT) == LOW || digitalRead(BUTTON_LEFT) == LOW);
   lcd.display();
   lcd.clear();
   timeOut = 0;
   analogWrite(LCD_BACKLIGHT_PIN, memory.settings.lcdBacklight);
   infoDisplayWrite();
+  inputManager.update();
 }
 
 void MenuSystem::RGBConfigMenuWrite() 
