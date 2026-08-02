@@ -192,7 +192,7 @@ void MenuSystem::idleScreen()
     
     if (checkLDR()) idleTextPrint();
 
-    bool LEDState = LEDController.getLEDState();
+    //bool LEDState = LEDController.getLEDState();
 
     if (updateClockAndControl()) idleTextPrint();
 

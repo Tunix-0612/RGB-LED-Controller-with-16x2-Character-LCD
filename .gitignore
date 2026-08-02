@@ -1,24 +1,21 @@
 # ==========================================
-# 1. Yazılım (Firmware) Ayarları
+# 1. Derleme ve Düzenleyici Kalıntıları (Asla Yüklenme!)
 # ==========================================
-# firmware içindeki her şeyi engelle
-firmware/*
+.pio/
+.vscode/
+firmware/.pio/
+firmware/.vscode/
+*.code-workspace
 
-# Ama altındaki klasör yapılarını aramaya devam et
-!firmware/src/
-!firmware/platformio.ini
-
-# ==========================================
-# 2. Donanım (Hardware) Ayarları
-# ==========================================
-# hardware içindeki her şeyi engelle
-hardware/*
-
-# Ama output klasörünü istisna tut (içeriği yüklensin)
-!hardware/output/
-
-# Altium'un en dış dizinde açabileceği ekstra klasörleri engelle
+# Altium / Donanım Çıktı Kalıntıları
 Reports/
 Road Maps/
+*.LOG
+*.PcbDoc.htm
 
-RGBLED_and_2x16LCD_Controller.code-workspace
+# ==========================================
+# 2. Özel Kurallar (Sadece İstenenleri Al)
+# ==========================================
+# Altium output klasöründeki üretim dosyalarını yükle ama yedekleri/logları engelle
+hardware/*
+!hardware/output/
