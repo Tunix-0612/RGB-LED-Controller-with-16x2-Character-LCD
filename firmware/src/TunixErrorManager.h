@@ -10,7 +10,7 @@ class TunixErrorManager
 	
 	public:
 		TunixErrorManager();
-		void errorHandler(int errorCode);
+		void errorHandler(ErrorCode code);
 };
 
 extern TunixErrorManager errorManager;

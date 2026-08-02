@@ -13,7 +13,7 @@ class TunixSelfTest
 		TunixSelfTest();
 	
 		int  getFreeRAM();
-		byte selfTest();
+		ErrorCode selfTest();
 };
 
 extern TunixSelfTest deviceTest;

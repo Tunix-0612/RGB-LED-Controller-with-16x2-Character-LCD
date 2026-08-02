@@ -1,9 +1,8 @@
 /*
-    BYTunix - Tunahan Bayraktar
+    Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
-    12/11/2025 - x
     Arduino Nano
-    Version 1.4.6-Build.26.7.I
+    Version: v1.4.6-stable+build.26.8.A
     USER INTERACTION & INPUT ABSTRACT LAYER
     --------------------------------------------------------------------------------
     * Complete overhaul of button handling routines and hardware debouncing algorithms.
@@ -15,16 +14,31 @@
     [Added]
     - LDR Check now has it's own separate function.
     - Two new files: InputManager.h/.cpp has been added for complete overhaul of button event manage.
+    - VersionInfo struct has been added to Constants.h for better version management.
+    - Added new function for getting next valid ASCII character in Menu.h for better character selection in menus.
+    - Internal Factory Reset function is now also available in Settings Menu.
+    - Set Clock Menu has been updated to have dynamic acceleration for faster time setting.
+    - Added a visual settings menu bar for better user experience.
 
     [Changed]
     - LDR Check procedure has been changed.
     - All menu functions has been updated to be in match with new button logics.
+    - #define statements has been replaced with constexpr for better type safety and scope control.
+    - Some old comments has been updated for better understanding.
 
     [Removed]
     - Some old commands deleted for cleanup.
+    - Unrequired delay() commands removed for better responsiveness.
+    - Some unrequired commands has been removed.
+    - Some old comments has been removed.
+    - Some old variables has been removed.
+    - Some old functions has been removed.
+    - Some old structs has been removed.
+    - Some old #define statements has been removed.
 
     [Fixed]
-    - 
+    - Percentage icon at the LDR Limit menu has been aligned before the number.
+    - Gibberish character set for the idle screen has been fixed.
 
 
     (16 - L) / 2 --- Center text function
@@ -46,12 +60,12 @@ TunixErrorManager errorManager;
 DisplayManagerSystem display;
 LEDControllerSystem LEDController;
 MenuSystem menu;
-InputManager inputManager(BUTTON_UP, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT);
+InputManager inputManager(Pins::BUTTON_UP, Pins::BUTTON_DOWN, Pins::BUTTON_LEFT, Pins::BUTTON_RIGHT);
 
 void introductionDisplay()
 {
   lcd.clear();
-  analogWrite(LCD_BACKLIGHT_PIN, 255);
+  analogWrite(Pins::LCD_BACKLIGHT, 255);
   lcd.setCursor(5, 0);
   lcd.print(F("Tunix"));
   lcd.setCursor(3, 1);
@@ -63,17 +77,17 @@ void introductionDisplay()
 void setup() 
 {
   inputManager.begin();
-  pinMode(RGB_R_PIN, OUTPUT);
-  pinMode(RGB_G_PIN, OUTPUT);
-  pinMode(RGB_B_PIN, OUTPUT);
-  pinMode(LDR_PIN, INPUT);
-  pinMode(LCD_BACKLIGHT_PIN, OUTPUT);
+  pinMode(Pins::RGB_R, OUTPUT);
+  pinMode(Pins::RGB_G, OUTPUT);
+  pinMode(Pins::RGB_B, OUTPUT);
+  pinMode(Pins::LDR, INPUT);
+  pinMode(Pins::LCD_BACKLIGHT, OUTPUT);
   memory.getBasicMemory();
   display.initDisplay();
   introductionDisplay();
   memory.firmwareValidate();
-  byte selfTestValue = deviceTest.selfTest();
-  if (selfTestValue != 0) errorManager.errorHandler(selfTestValue);
+  ErrorCode selfTestValue = deviceTest.selfTest();
+  if (selfTestValue != ErrorCode::NONE) errorManager.errorHandler(selfTestValue);
   memory.loadRGBConfig(memory.settings.selectedConfig);
   LEDController.RGBBrigthnessRead();
   menu.setClockMenu(true);
@@ -83,6 +97,6 @@ void setup()
 
 void loop() 
 {
-  errorManager.errorHandler(PROGRAM_LOOP_FAILURE_CODE);
+  errorManager.errorHandler(ErrorCode::PROGRAM_LOOP_FAILURE);
   while(true) delay(2000);
 }

@@ -24,7 +24,7 @@ TunixMemoryManager::TunixMemoryManager(int EEPROMSize)
 
 void TunixMemoryManager::getBasicMemory()
 {
-	EEPROM.get(VERSION_ADRESS, version);
+	EEPROM.get(VERSION_ADRESS, eepromVersion);
 	EEPROM.get(SETTINGS_ADRESS, settings);
 	// --- Add Additional Device Memory Recalls Here
 	return;
@@ -45,10 +45,10 @@ void TunixMemoryManager::factoryReset()
 	// --- Add Deafult settings here if you want to
 	settings = defaultSettings;
 	EEPROM.put(SETTINGS_ADRESS, settings);
-	version.major = SOFTWARE_MAJOR_VERSION;
-	version.minor = SOFTWARE_MINOR_VERSION;
-	version.patch = SOFTWARE_PATCH_VERSION;
-	EEPROM.put(VERSION_ADRESS, version);
+
+	eepromVersion = SystemVersion::FIRMWARE;
+	EEPROM.put(VERSION_ADRESS, eepromVersion);
+
 	// --- Processes After Reset
   activeConfig.R = 255;
   activeConfig.G = 0;
@@ -61,24 +61,17 @@ void TunixMemoryManager::factoryReset()
 	while(true);
 }
 
-// Convert version numbers to scalar ones such as 10302 for easier version check
-long TunixMemoryManager::getVersionValue(byte major, byte minor, byte patch) { return ((long)major * 10000) + ((long)minor * 100) + patch; }
-
 // --- Validate the firmware versions
-byte TunixMemoryManager::firmwareValidate() 
+ErrorCode TunixMemoryManager::firmwareValidate() 
 {
-  long currentVer = getVersionValue(version.major, version.minor, version.patch);
-  long softwareVer = getVersionValue(SOFTWARE_MAJOR_VERSION, SOFTWARE_MINOR_VERSION, SOFTWARE_PATCH_VERSION);
-  long minAllowedVer = getVersionValue(MINIMUM_SOFTWARE_MAJOR_VERSION, MINIMUM_SOFTWARE_MINOR_VERSION, MINIMUM_SOFTWARE_PATCH_VERSION);
+  // If no version difference, return no error
+  if (eepromVersion == SystemVersion::FIRMWARE) return ErrorCode::NONE;
 
-  // If the version check is the same, return immediately
-  if (currentVer == softwareVer) return 0;
-
-  // If the software version is newer than saved version then proceed to update
-  if (currentVer < softwareVer)
+  // If the firmware version is greater than the EEPROM version, it means the firmware has been updated.
+  if (eepromVersion < SystemVersion::FIRMWARE)
   {
-    // Minimum valid update version check
-    if (currentVer < minAllowedVer) return VERSION_NOT_SUPPORTED_CODE; 
+    // If the EEPROM version is less than the minimum supported version, return an error.
+    if (eepromVersion < SystemVersion::MIN_SUPPORTED) return ErrorCode::VERSION_NOT_SUPPORTED;
 
     lcd.clear();
     lcd.setCursor(3, 0);
@@ -88,7 +81,7 @@ byte TunixMemoryManager::firmwareValidate()
     delay(500);
 
     // --- 1.4.0 MIGRATION ---
-    if (currentVer < 10400)
+    if (eepromVersion < VersionInfo{1, 4, 0})
     {
       delay(500);
 
@@ -112,7 +105,7 @@ byte TunixMemoryManager::firmwareValidate()
     }
 
     // --- 1.4.1 START AND END TIMER FIX ---
-    if (currentVer == 10401)
+    if (eepromVersion == VersionInfo{1, 4, 1})
     {
       settings.startTime = 1095;
       settings.endTime = 1395;
@@ -120,20 +113,19 @@ byte TunixMemoryManager::firmwareValidate()
       EEPROM.put(SETTINGS_ADRESS, settings);
     }
 
-    // Version Data Save
-    version.major = SOFTWARE_MAJOR_VERSION;
-    version.minor = SOFTWARE_MINOR_VERSION;
-    version.patch = SOFTWARE_PATCH_VERSION;
-    EEPROM.put(VERSION_ADRESS, version);
+    // Save the new firmware version to EEPROM
+    eepromVersion = SystemVersion::FIRMWARE;
+    EEPROM.put(VERSION_ADRESS, eepromVersion);
 
     lcd.clear();
     lcd.print(F("Updated Firmware"));
     lcd.setCursor(0, 1);
     lcd.print(F("PLS RESET"));
-    while(true); // Lock the device
+    
+    while (true); // Lock the Device.
   }
-  // Downgraded version check
-  else return DOWNGRADED_FIRMWARE_CODE;
+
+  return ErrorCode::DOWNGRADED_FIRMWARE;
 }
 
 void TunixMemoryManager::loadRGBConfig(byte index)

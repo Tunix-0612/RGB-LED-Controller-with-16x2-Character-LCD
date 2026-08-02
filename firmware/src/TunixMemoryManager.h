@@ -5,25 +5,18 @@
 #include <EEPROM.h>
 #include "Constants.h"
 
-// --- EEPROM ADRESSES ---
-
-#define VERSION_ADRESS    	0
-#define SETTINGS_ADRESS   	(VERSION_ADRESS + sizeof(TunixMemoryManager::versionStruct))
-#define BASE_CONFIG_ADRESS  (SETTINGS_ADRESS + sizeof(TunixMemoryManager::settingsStruct))
-
 class TunixMemoryManager
 {
 	private:
 		int _EEPROMSize;
-		long getVersionValue(byte major, byte minor, byte patch);
 	
 	public:
 		struct settingsStruct
 		{
-  		byte lcdBacklight;
-  		bool screenOffState;
-  		byte LDRLimit;
-  		byte selectedConfig;
+			byte lcdBacklight;
+			bool screenOffState;
+			byte LDRLimit;
+			byte selectedConfig;
 			byte selectedBrightness;
 			byte brightnessMode2;
 			byte brightnessMode3;
@@ -35,13 +28,6 @@ class TunixMemoryManager
 			int endTime;
 		};
 
-		struct versionStruct
-		{
-			byte major;
-			byte minor;
-			byte patch;
-		};
-
 		struct RGBConfig 
 		{
 			byte R;
@@ -51,7 +37,7 @@ class TunixMemoryManager
 		
 		settingsStruct settings;
 		settingsStruct defaultSettings;
-		versionStruct version;		
+		VersionInfo eepromVersion;
 		RGBConfig activeConfig;
 		
 		TunixMemoryManager(int EEPROMSize);
@@ -59,7 +45,7 @@ class TunixMemoryManager
 		void getBasicMemory();
 		void saveBasicMemory();
 		void factoryReset();
-		byte firmwareValidate();
+		ErrorCode firmwareValidate();
 
 		void loadRGBConfig(byte index);
 		void saveRGBConfig(byte index);
@@ -68,6 +54,11 @@ class TunixMemoryManager
 		byte readBrightnessForMode(byte mode);
 		void saveBrightnessForMode(byte mode, byte brightness);
 };
+
+// --- EEPROM Memory Addresses ---
+constexpr int VERSION_ADRESS     = 0;
+constexpr int SETTINGS_ADRESS    = VERSION_ADRESS + sizeof(VersionInfo);
+constexpr int BASE_CONFIG_ADRESS = SETTINGS_ADRESS + sizeof(TunixMemoryManager::settingsStruct);
 
 extern TunixMemoryManager memory;
 

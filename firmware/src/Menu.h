@@ -27,6 +27,7 @@ class MenuSystem
     bool checkLDR();
     void infoDisplayWrite();
     void RGBConfigMenuWrite();
+    byte getNextValidAscii(byte currentVal, bool increment);
     void brightnessMenuWrite();
     void screenBrightnessMenuWrite();
     void screenOffStateMenuWrite();

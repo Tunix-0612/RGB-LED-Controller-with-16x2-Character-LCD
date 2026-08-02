@@ -16,8 +16,9 @@ static const char m8[] PROGMEM = " Timer Settings";
 static const char m9[] PROGMEM = " New RGB Config";
 static const char m10[] PROGMEM = " Delete Config";
 static const char m11[] PROGMEM = " Info";
+static const char m12[] PROGMEM = " Factory Reset";
 
-static const char* const menuItems[] PROGMEM = { m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11 };
+static const char* const menuItems[] PROGMEM = { m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12 };
 
 // SPECIAL CHARACTERS
 static const byte arrowUp[8] PROGMEM    = { B00100, B01110, B11111, B00100, B00100, B00000, B00000, B00000 };
@@ -61,7 +62,7 @@ void DisplayManagerSystem::initDisplay()
 
 const __FlashStringHelper* DisplayManagerSystem::getMenuString(byte menuIndex) {
 
-    if (menuIndex >= 11) return F(""); 
+    if (menuIndex >= 12) return F(""); 
 
     return (const __FlashStringHelper*)pgm_read_word(&(menuItems[menuIndex]));
 }

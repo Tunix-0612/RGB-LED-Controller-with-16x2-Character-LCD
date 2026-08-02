@@ -9,17 +9,17 @@ void LEDControllerSystem::RGBColorApply(byte targetRed, byte targetGreen, byte t
 {
   if(ledOff == true)
   {
-    analogWrite(RGB_R_PIN, 0);
-    analogWrite(RGB_G_PIN, 0);
-    analogWrite(RGB_B_PIN, 0);
+    analogWrite(Pins::RGB_R, 0);
+    analogWrite(Pins::RGB_G, 0);
+    analogWrite(Pins::RGB_B, 0);
     return;
   }
   uint16_t scaledRed = ((uint16_t)targetRed * ledBrightness) / 255;
   uint16_t scaledGreen = ((uint16_t)targetGreen * ledBrightness) / 255;
   uint16_t scaledBlue = ((uint16_t)targetBlue * ledBrightness) / 255;
-  analogWrite(RGB_R_PIN, scaledRed);
-  analogWrite(RGB_G_PIN, scaledGreen);
-  analogWrite(RGB_B_PIN, scaledBlue);
+  analogWrite(Pins::RGB_R, scaledRed);
+  analogWrite(Pins::RGB_G, scaledGreen);
+  analogWrite(Pins::RGB_B, scaledBlue);
   return;
 }
 
@@ -62,7 +62,7 @@ void LEDControllerSystem::fadeAnimationEngine()
     if (!wasAnimating)
     {
       lcd.setCursor(15, 0);
-      lcd.write((byte)4);
+      lcd.write(CLOCK_CHAR);
       wasAnimating = true;
     }
     RGBColorApply(currentRed, currentGreen, currentBlue);
@@ -87,7 +87,7 @@ void LEDControllerSystem::ledChange()
   ledOff = !ledOff;
   RGBColorApply(currentRed, currentGreen, currentBlue);
   lcd.display();
-  analogWrite(LCD_BACKLIGHT_PIN, memory.settings.lcdBacklight);
+  analogWrite(Pins::LCD_BACKLIGHT, memory.settings.lcdBacklight);
   lcd.clear();
   lcd.setCursor(3, 0);
   if(ledOff) lcd.print(F("LEDs OFF"));
