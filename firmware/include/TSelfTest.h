@@ -1,21 +1,22 @@
-#ifndef TUNIXSELFTEST_H
-#define TUNIXSELFTEST_H
+#ifndef TSELFTEST_H
+#define TSELFTEST_H
 
 #include <Arduino.h>
+
 #include "Constants.h"
 
-class TunixSelfTest
+class TSelfTest
 {
 	private:
 		bool runRAMTest();
 		
 	public:
-		TunixSelfTest();
+		TSelfTest();
 	
 		int  getFreeRAM();
 		ErrorCode selfTest();
 };
 
-extern TunixSelfTest deviceTest;
+extern TSelfTest deviceTest;
 
 #endif

@@ -1,9 +1,9 @@
-#include "TunixSelfTest.h"
+#include "TSelfTest.h"
 
-TunixSelfTest::TunixSelfTest() { }
+TSelfTest::TSelfTest() { }
 
 // --- Arduino check free RAM, return by byt
-int TunixSelfTest::getFreeRAM() 
+int TSelfTest::getFreeRAM() 
 {
   extern int __heap_start, *__brkval; 
   int v; 
@@ -11,7 +11,7 @@ int TunixSelfTest::getFreeRAM()
 }
 
 // --- Arduino RAM test
-bool TunixSelfTest::runRAMTest() 
+bool TSelfTest::runRAMTest()
 {
   // RAM start and end adresses for ATMEGA328P
   // Start Adress 0x0100 (Internal SRAM)
@@ -42,10 +42,11 @@ bool TunixSelfTest::runRAMTest()
   return false; // All Registers are Healthy
 }
 
-ErrorCode TunixSelfTest::selfTest()
+ErrorCode TSelfTest::selfTest()
 {
 	if(runRAMTest()) return ErrorCode::RAM_FAILURE;
-		
-	// Write device specified self test checks
+
+  // --- Additional Self-Test Commands.
+
 	return ErrorCode::NONE;
 }

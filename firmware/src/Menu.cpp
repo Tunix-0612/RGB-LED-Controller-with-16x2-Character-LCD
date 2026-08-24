@@ -1,20 +1,22 @@
-#include "Arduino.h"
 #include "Menu.h"
+
 #include "Display.h"
-#include "TunixMemoryManager.h"
+#include "TMemoryManager.h"
 #include "LEDControl.h"
 #include "InputManager.h"
 
-unsigned long MenuSystem::uptime = 0;
-unsigned long MenuSystem::oldUptime = 0;
-unsigned long MenuSystem::uptimeFlag = 0;
+using PartID = TMemoryManager::PartitionID;
+
+uint32_t MenuSystem::uptime = 0;
+uint32_t MenuSystem::oldUptime = 0;
+uint32_t MenuSystem::uptimeFlag = 0;
 
 MenuSystem::MenuSystem() { }
 
-bool MenuSystem::updateClockAndControl() 
+bool MenuSystem::updateClockAndControl()
 {
-  unsigned long currentMillis = millis();
-  constexpr unsigned long CALIBRATED_MINUTE_MS = 59944UL; 
+  uint32_t currentMillis = millis();
+  constexpr uint32_t CALIBRATED_MINUTE_MS = 59944UL; 
   // This value is calibrated for the internal clock drift of the Arduino Nano ATmega328P. It is not exactly 60000 ms due to the clock's inaccuracy.
   // The calibrated value is determined through empirical testing and may vary slightly between different units.
 
@@ -28,7 +30,7 @@ bool MenuSystem::updateClockAndControl()
   if (currentMillis - lastControlMillis < 10000UL) return false;
   lastControlMillis = currentMillis;
 
-  bool inInterval = (memory.settings.startTime < memory.settings.endTime) 
+  bool inInterval = (memory.settings.startTime < memory.settings.endTime)
     ? (currentTime >= memory.settings.startTime && currentTime < memory.settings.endTime)
     : (currentTime >= memory.settings.startTime || currentTime < memory.settings.endTime);
 
@@ -133,7 +135,7 @@ void MenuSystem::infoDisplay()
 
     LEDController.fadeAnimationEngine();
     
-    checkLDR();
+    if(memory.settings.LDRActive) checkLDR();
 
     timeOut++;
     delay(2);
@@ -145,17 +147,17 @@ void MenuSystem::idleTextPrint()
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(memory.settings.idleTextUp);
+  lcd.print(memory.displayText.idleTextUp);
   lcd.setCursor(0, 1);
-  lcd.print(memory.settings.idleTextBottom);
+  lcd.print(memory.displayText.idleTextBottom);
 }
 
 void MenuSystem::idleScreen() 
 {
   timeOut = 0;
-  unsigned long lastClockBlinkMillis = 0;
+  uint32_t lastClockBlinkMillis = 0;
   bool clockBlinkState = false;
-  memory.saveBasicMemory();
+  memory.writeData(PartID::SETTINGS, memory.settings);
   idleTextPrint();
   while (true) 
   {
@@ -172,7 +174,7 @@ void MenuSystem::idleScreen()
       timeOut = 0;
       memory.settings.selectedBrightness++;
       if (memory.settings.selectedBrightness > 4) memory.settings.selectedBrightness = 1;
-      memory.saveBasicMemory();
+      memory.writeData(PartID::SETTINGS, memory.settings);
       LEDController.RGBBrigthnessRead();
       LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
     }
@@ -193,14 +195,14 @@ void MenuSystem::idleScreen()
 
     oldUptime = uptime;
     
-    if (checkLDR()) idleTextPrint();
+    if (memory.settings.LDRActive && checkLDR()) idleTextPrint();
 
-    if (updateClockAndControl()) idleTextPrint();
+    if (memory.settings.timerActive && updateClockAndControl()) idleTextPrint();
 
     uptime = millis();
     if (uptime < oldUptime) uptimeFlag++;
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastClockBlinkMillis >= 750 && !coldBootClockSet) 
     {
       lastClockBlinkMillis = currentMillis;
@@ -239,7 +241,7 @@ void MenuSystem::RGBConfigMenuWrite()
 
 void MenuSystem::RGBConfigMenu() 
 {
-  unsigned long lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
   lcd.clear();
   lcd.cursor();
@@ -251,7 +253,7 @@ void MenuSystem::RGBConfigMenu()
     ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
         if (inputManager.isPressed(BTN_UP))
@@ -260,9 +262,9 @@ void MenuSystem::RGBConfigMenu()
           if (RGBConfigMenuCursor == 1) memory.activeConfig.R = constrain((int)memory.activeConfig.R + 5, 0, 255);
           if (RGBConfigMenuCursor == 2) memory.activeConfig.G = constrain((int)memory.activeConfig.G + 5, 0, 255);
           if (RGBConfigMenuCursor == 3) memory.activeConfig.B = constrain((int)memory.activeConfig.B + 5, 0, 255);
-          byte redValue = memory.activeConfig.R;
-          byte greenValue = memory.activeConfig.G;
-          byte blueValue = memory.activeConfig.B;
+          uint8_t redValue = memory.activeConfig.R;
+          uint8_t greenValue = memory.activeConfig.G;
+          uint8_t blueValue = memory.activeConfig.B;
           LEDController.RGBColorApply(redValue, greenValue, blueValue);
           RGBConfigMenuWrite();
           lastFastChangeMillis = currentMillis;
@@ -274,9 +276,9 @@ void MenuSystem::RGBConfigMenu()
           if (RGBConfigMenuCursor == 1) memory.activeConfig.R = constrain((int)memory.activeConfig.R - 5, 0, 255);
           if (RGBConfigMenuCursor == 2) memory.activeConfig.G = constrain((int)memory.activeConfig.G - 5, 0, 255);
           if (RGBConfigMenuCursor == 3) memory.activeConfig.B = constrain((int)memory.activeConfig.B - 5, 0, 255);
-          byte redValue = memory.activeConfig.R;
-          byte greenValue = memory.activeConfig.G;
-          byte blueValue = memory.activeConfig.B;
+          uint8_t redValue = memory.activeConfig.R;
+          uint8_t greenValue = memory.activeConfig.G;
+          uint8_t blueValue = memory.activeConfig.B;
           LEDController.RGBColorApply(redValue, greenValue, blueValue);
           RGBConfigMenuWrite();
           lastFastChangeMillis = currentMillis;
@@ -311,7 +313,7 @@ void MenuSystem::RGBConfigMenu()
   settingsMenuWrite();
 }
 
-byte MenuSystem::getNextValidAscii(byte currentVal, bool increment)
+uint8_t MenuSystem::getNextValidAscii(uint8_t currentVal, bool increment)
 {
   if (increment) 
   {
@@ -336,17 +338,17 @@ byte MenuSystem::getNextValidAscii(byte currentVal, bool increment)
 
 void MenuSystem::idleScreenTextMenu() 
 {
-  byte cursorLine = 0;
-  byte cursorPose = 0;
+  uint8_t cursorLine = 0;
+  uint8_t cursorPose = 0;
   char charCurrentByte;
 
-  unsigned long lastFastChangeMillis = 0;
-  unsigned long FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0;
+  uint32_t FAST_CHANGE_INTERVAL = 150;
 
   lcd.clear();
-  lcd.print(memory.settings.idleTextUp);
+  lcd.print(memory.displayText.idleTextUp);
   lcd.setCursor(0, 1);
-  lcd.print(memory.settings.idleTextBottom);
+  lcd.print(memory.displayText.idleTextBottom);
   lcd.cursor();
   lcd.blink();
   while(true)
@@ -357,10 +359,10 @@ void MenuSystem::idleScreenTextMenu()
     ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
 
     lcd.setCursor(cursorPose, cursorLine);
-    if (cursorLine == 0) charCurrentByte = memory.settings.idleTextUp[cursorPose];
-    else charCurrentByte = memory.settings.idleTextBottom[cursorPose];
+    if (cursorLine == 0) charCurrentByte = memory.displayText.idleTextUp[cursorPose];
+    else charCurrentByte = memory.displayText.idleTextBottom[cursorPose];
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
 
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
@@ -371,8 +373,8 @@ void MenuSystem::idleScreenTextMenu()
         charCurrentByte = getNextValidAscii(charCurrentByte, true);
         lcd.print((char)charCurrentByte);
 
-        if (cursorLine == 0) memory.settings.idleTextUp[cursorPose] = charCurrentByte;
-        else memory.settings.idleTextBottom[cursorPose] = charCurrentByte;
+        if (cursorLine == 0) memory.displayText.idleTextUp[cursorPose] = charCurrentByte;
+        else memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
         
         lastFastChangeMillis = currentMillis;
       }
@@ -384,8 +386,8 @@ void MenuSystem::idleScreenTextMenu()
         charCurrentByte = getNextValidAscii(charCurrentByte, false);
         lcd.print((char)charCurrentByte);
 
-        if (cursorLine == 0) memory.settings.idleTextUp[cursorPose] = charCurrentByte;
-        else memory.settings.idleTextBottom[cursorPose] = charCurrentByte;
+        if (cursorLine == 0) memory.displayText.idleTextUp[cursorPose] = charCurrentByte;
+        else memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
 
         lastFastChangeMillis = currentMillis;
       }
@@ -414,7 +416,7 @@ void MenuSystem::idleScreenTextMenu()
   }
   lcd.noCursor();
   lcd.noBlink();
-  memory.saveBasicMemory();
+  memory.writeData(PartID::DISPLAY_TEXT, memory.displayText);
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
@@ -430,7 +432,7 @@ void MenuSystem::brightnessMenuWrite()
   lcd.print(memory.settings.selectedBrightness);
   lcd.print(F(" Brightness"));
   lcd.setCursor(0, 1);
-  byte ledBrightness = LEDController.getLEDBrightness();
+  uint8_t ledBrightness = LEDController.getLEDBrightness();
   lcd.print(ledBrightness);
   lcd.print(F(" (0-255)"));
 }
@@ -450,16 +452,16 @@ void MenuSystem::brightnessMenu()
     return;
   }
 
-  unsigned long lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
   brightnessMenuWrite();
-  byte ledBrightness = LEDController.getLEDBrightness();
+  uint8_t ledBrightness = LEDController.getLEDBrightness();
   while(true) 
   {
     inputManager.update();
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
       if (inputManager.isPressed(BTN_UP))
@@ -513,7 +515,7 @@ void MenuSystem::screenBrightnessMenuWrite()
 
 void MenuSystem::screenBrightnessMenu() 
 {
-  unsigned long lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
   lcdBacklightPerc = map(memory.settings.lcdBacklight, 0, 255, 0, 100);
   screenBrightnessMenuWrite();
@@ -522,7 +524,7 @@ void MenuSystem::screenBrightnessMenu()
     inputManager.update();
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
       if (inputManager.isPressed(BTN_UP))
@@ -557,7 +559,7 @@ void MenuSystem::screenBrightnessMenu()
     timeOut++;
     if (timeOut > 1000) break;
   }
-  memory.saveBasicMemory();
+  memory.writeData(PartID::SETTINGS, memory.settings);
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
@@ -606,7 +608,7 @@ void MenuSystem::screenOffStateMenu()
     if (timeOut > 1000) break;
   }
   
-  memory.saveBasicMemory();
+  memory.writeData(PartID::SETTINGS, memory.settings);
   
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
@@ -619,26 +621,38 @@ void MenuSystem::LDRManagementMenuText()
 {
   lcd.clear();
   lcd.write(GEAR_CHAR);
-  lcd.print(F(" LDR Limit"));
+  lcd.print(F(" Limit"));
   lcd.setCursor(5, 1);
   lcd.print(LDRLimitPerc);
   lcd.print(F("%"));
   LDRValue = map(analogRead(Pins::LDR), 0, 1023, 0, 100);
   lcd.setCursor(13, 0);
   lcd.print(LDRValue);
+
+  lcd.setCursor(9, 0);
+  lcd.print("Active");
+  lcd.setCursor(13, 1);
+  if (memory.settings.LDRActive) lcd.print(" ON");
+  else                           lcd.print("OFF");
+  
 }
 
 void MenuSystem::LDRManagementMenu() 
 {
-  unsigned long lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+
+  bool focusOnLDRActive = false;
+
   LDRLimitPerc = map(memory.settings.LDRLimit, 0, 1023, 0, 100);
   LDRManagementMenuText();
   while(true) 
   {
     inputManager.update();
+    
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
+    ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
       if (inputManager.isPressed(BTN_UP))
@@ -662,6 +676,12 @@ void MenuSystem::LDRManagementMenu()
       }
     }
 
+    if (eventRight == BTN_EVENT_CLICK)
+    {
+      focusOnLDRActive = !focusOnLDRActive;
+      LDRManagementMenuText();
+    }
+
     if (eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
@@ -673,7 +693,7 @@ void MenuSystem::LDRManagementMenu()
     if (timeOut > 1500) break;
   }
 
-  memory.saveBasicMemory();
+  memory.writeData(PartID::SETTINGS, memory.settings);
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
@@ -687,8 +707,8 @@ void MenuSystem::timerSettingsMenuWrite(bool focusOnStart)
   if (focusOnStart) lcd.print(F(">Start: "));
   else              lcd.print(F(" Start: "));
   
-  int startH = memory.settings.startTime / 60;
-  int startM = memory.settings.startTime % 60;
+  uint16_t startH = memory.settings.startTime / 60;
+  uint16_t startM = memory.settings.startTime % 60;
 
   lcd.setCursor(8, 0);
   if (startH < 10) lcd.print(F("0"));
@@ -699,10 +719,10 @@ void MenuSystem::timerSettingsMenuWrite(bool focusOnStart)
 
   lcd.setCursor(0, 1);
   if (!focusOnStart) lcd.print(F(">End:   "));
-  else lcd.print(F(" End:   "));
+  else               lcd.print(F(" End:   "));
   
-  int endH = memory.settings.endTime / 60;
-  int endM = memory.settings.endTime % 60;
+  uint16_t endH = memory.settings.endTime / 60;
+  uint16_t endM = memory.settings.endTime % 60;
 
   lcd.setCursor(8, 1);
   if (endH < 10) lcd.print(F("0"));
@@ -718,18 +738,18 @@ void MenuSystem::timerSettingsMenuWrite(bool focusOnStart)
 void MenuSystem::timerSettingsMenu() 
 {  
   bool focusOnStart = true;
-  unsigned long lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
+  uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
   timerSettingsMenuWrite(focusOnStart);
 
   while(true)
   {
-    int &targetTime = focusOnStart ? memory.settings.startTime : memory.settings.endTime;
+    uint16_t &targetTime = focusOnStart ? memory.settings.startTime : memory.settings.endTime;
 
     inputManager.update();
     ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long currentMillis = millis();
+    uint32_t currentMillis = millis();
     if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
     {
       if (inputManager.isPressed(BTN_UP)) 
@@ -768,7 +788,7 @@ void MenuSystem::timerSettingsMenu()
     timeOut++;
     if (timeOut > 1000) break;
   }
-  memory.saveBasicMemory();
+  memory.writeData(PartID::SETTINGS, memory.settings);
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
@@ -776,12 +796,15 @@ void MenuSystem::timerSettingsMenu()
   settingsMenuWrite();
 }
 
-void MenuSystem::setClockMenuWrite() 
+void MenuSystem::setClockMenuWrite(bool focusOnActivation) 
 {
   lcd.clear();
   lcd.write(GEAR_CHAR);
-  lcd.print(F(" Adjust Clock"));
-  lcd.setCursor(5, 1);
+  lcd.print(F(" Clock"));
+  lcd.setCursor(1, 1);
+
+  if(!focusOnActivation) lcd.print(">");
+  else                  lcd.setCursor(2, 1);
   
   int hours = currentTime / 60;
   int minutes = currentTime % 60;
@@ -791,62 +814,90 @@ void MenuSystem::setClockMenuWrite()
   lcd.print(F(":"));
   if (minutes < 10) lcd.print(F("0"));
   lcd.print(minutes);
-  
-  lcd.setCursor(15, 1);
-  lcd.write(ARROW_RIGHT_CHAR);
+
+  lcd.setCursor(10, 0);
+  lcd.print(F("Enable"));
+
+  lcd.setCursor(11, 1);
+  if(focusOnActivation) lcd.print(">");
+  else                  lcd.setCursor(12, 1);
+
+  if(memory.settings.timerActive) lcd.print(F("ON"));
+  else                            lcd.print(F("OFF"));
 }
 
 void MenuSystem::setClockMenu(bool coldBoot)
 {
-  unsigned long lastFastChangeMillis = 0;
+  uint32_t lastFastChangeMillis = 0;
+  
+  bool focusOnClockEnable = false;
   
   uint16_t dynamicInterval = 150;
   uint8_t holdCounter = 0;
 
-  setClockMenuWrite();
-  int16_t maxTimeout = coldBoot ? 6000 : 1000;
+  setClockMenuWrite(focusOnClockEnable);
+  uint16_t maxTimeout = coldBoot ? 6000 : 1000;
   timeOut = 0;
 
   while(true)
   {
     inputManager.update();
-    ButtonEvent eventLeft = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long currentMillis = millis();
+    ButtonEvent eventLeft   = inputManager.getEvent(BTN_LEFT);
+    ButtonEvent eventRight  = inputManager.getEvent(BTN_RIGHT);
+    ButtonEvent eventUp     = inputManager.getEvent(BTN_UP);
+    ButtonEvent eventDown   = inputManager.getEvent(BTN_DOWN);
+
+    uint32_t currentMillis = millis();
 
     bool isUpPressed   = inputManager.isPressed(BTN_UP);
     bool isDownPressed = inputManager.isPressed(BTN_DOWN);
 
-    if (isUpPressed || isDownPressed)
+    if (!focusOnClockEnable)
     {
-      if (currentMillis - lastFastChangeMillis >= dynamicInterval)
+      if (isUpPressed || isDownPressed)
       {
-        timeOut = 0;
-        holdCounter++;
-
-        if (holdCounter > 25)      dynamicInterval = 30;
-        else if (holdCounter > 10) dynamicInterval = 75;
-        else                       dynamicInterval = 150;
-
-        if (isUpPressed)
+        if (currentMillis - lastFastChangeMillis >= dynamicInterval)
         {
-          currentTime += 1;
-          if (currentTime >= 1440) currentTime = 0;
-        }
-        else if (isDownPressed)
-        {
-          currentTime -= 1;
-          if (currentTime < 0) currentTime = 1439;
-        }
+          timeOut = 0;
+          holdCounter++;
 
-        setClockMenuWrite();
-        lastFastChangeMillis = currentMillis;
+          if (holdCounter > 25)      dynamicInterval = 30;
+          else if (holdCounter > 10) dynamicInterval = 75;
+          else                       dynamicInterval = 150;
+
+          if (isUpPressed)
+          {
+            currentTime += 1;
+            if (currentTime >= 1440) currentTime = 0;
+          }
+          else if (isDownPressed)
+          {
+            currentTime -= 1;
+            if (currentTime < 0) currentTime = 1439;
+          }
+
+          setClockMenuWrite(focusOnClockEnable);
+          lastFastChangeMillis = currentMillis;
+        }
+      }
+      else
+      {
+        holdCounter = 0;
+        dynamicInterval = 150;
       }
     }
-    else
+    else if (eventUp == BTN_EVENT_CLICK || eventDown == BTN_EVENT_CLICK) 
     {
-      holdCounter = 0;
-      dynamicInterval = 150;
+      memory.settings.timerActive = !memory.settings.timerActive;
+      setClockMenuWrite(focusOnClockEnable);
+    }
+
+    if (eventRight == BTN_EVENT_CLICK)
+    {
+      timeOut = 0;
+      focusOnClockEnable = !focusOnClockEnable;
+      setClockMenuWrite(focusOnClockEnable);
     }
 
     if (eventLeft == BTN_EVENT_CLICK) 
@@ -936,12 +987,12 @@ void MenuSystem::infoScreen()
 
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
 
-    unsigned long flagSeconds = (unsigned long)uptimeFlag * 4294967UL;
-    unsigned long totalSeconds = millis() / 1000 + flagSeconds;
-    unsigned long hours = totalSeconds / 3600;
-    byte minutes = (totalSeconds / 60) % 60;
-    byte seconds = totalSeconds % 60;
-    byte xPos = 8;
+    uint32_t flagSeconds = (uint32_t)uptimeFlag * 4294967UL;
+    uint32_t totalSeconds = millis() / 1000 + flagSeconds;
+    uint32_t hours = totalSeconds / 3600;
+    uint8_t minutes = (totalSeconds / 60) % 60;
+    uint8_t seconds = totalSeconds % 60;
+    uint8_t xPos = 8;
     if(hours >= 100) xPos = 7;
     if (hours >= 1000) xPos = 6;
     lcd.setCursor(xPos, 1);

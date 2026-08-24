@@ -1,11 +1,11 @@
-#include "WString.h"
 #include "LEDControl.h"
-#include "TunixMemoryManager.h"
+
+#include "TMemoryManager.h"
 #include "Display.h"
 
 LEDControllerSystem::LEDControllerSystem() { }
 
-void LEDControllerSystem::RGBColorApply(byte targetRed, byte targetGreen, byte targetBlue)
+void LEDControllerSystem::RGBColorApply(uint8_t targetRed, uint8_t targetGreen, uint8_t targetBlue)
 {
   if(ledOff == true)
   {
@@ -103,4 +103,4 @@ bool LEDControllerSystem::getLEDState()
   else return false;
 }
 
-byte LEDControllerSystem::getLEDBrightness() { return ledBrightness; }
+uint8_t LEDControllerSystem::getLEDBrightness() { return ledBrightness; }

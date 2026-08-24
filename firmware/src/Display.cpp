@@ -21,16 +21,16 @@ static const char m12[] PROGMEM = " Factory Reset";
 static const char* const menuItems[] PROGMEM = { m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12 };
 
 // SPECIAL CHARACTERS
-static const byte arrowUp[8] PROGMEM    = { B00100, B01110, B11111, B00100, B00100, B00000, B00000, B00000 };
-static const byte arrowDown[8] PROGMEM  = { B00000, B00000, B00100, B00100, B11111, B01110, B00100, B00000 };
-static const byte arrowLeft[8] PROGMEM  = { B00000, B00100, B01100, B11111, B01100, B00100, B00000, B00000 };
-static const byte arrowRight[8] PROGMEM = { B00000, B00100, B00110, B11111, B00110, B00100, B00000, B00000 };
-static const byte clockSymbol[8] PROGMEM = { B00000, B01110, B10101, B10101, B10111, B10001, B01110, B00000 };
-static const byte tickSymbol[8] PROGMEM  = { B00000, B00000, B00001, B00011, B10110, B01100, B00000, B00000 };
-static const byte LDRSymbol[8] PROGMEM   = { B00000, B11101, B10101, B10101, B10101, B10111, B00000, B00000 };
-static const byte gearSymbol[8] PROGMEM  = { B00100, B01110, B11011, B01010, B11011, B01110, B00100, B00000 };
+static const uint8_t arrowUp[8] PROGMEM    = { B00100, B01110, B11111, B00100, B00100, B00000, B00000, B00000 };
+static const uint8_t arrowDown[8] PROGMEM  = { B00000, B00000, B00100, B00100, B11111, B01110, B00100, B00000 };
+static const uint8_t arrowLeft[8] PROGMEM  = { B00000, B00100, B01100, B11111, B01100, B00100, B00000, B00000 };
+static const uint8_t arrowRight[8] PROGMEM = { B00000, B00100, B00110, B11111, B00110, B00100, B00000, B00000 };
+static const uint8_t clockSymbol[8] PROGMEM = { B00000, B01110, B10101, B10101, B10111, B10001, B01110, B00000 };
+static const uint8_t tickSymbol[8] PROGMEM  = { B00000, B00000, B00001, B00011, B10110, B01100, B00000, B00000 };
+static const uint8_t LDRSymbol[8] PROGMEM   = { B00000, B11101, B10101, B10101, B10101, B10111, B00000, B00000 };
+static const uint8_t gearSymbol[8] PROGMEM  = { B00100, B01110, B11011, B01010, B11011, B01110, B00100, B00000 };
 
-static const byte* const allCharacters[] PROGMEM = 
+static const uint8_t* const allCharacters[] PROGMEM = 
 {
   arrowUp, arrowDown, arrowLeft, arrowRight,
   clockSymbol, tickSymbol, LDRSymbol, gearSymbol
@@ -38,13 +38,13 @@ static const byte* const allCharacters[] PROGMEM =
 
 void DisplayManagerSystem::loadCustomCharacters() 
 {
-  byte buffer[8];
+  uint8_t buffer[8];
 
-  for (byte charIndex = 0; charIndex < 8; charIndex++) 
+  for (uint8_t charIndex = 0; charIndex < 8; charIndex++) 
   {
-    const byte* charAddress = (const byte*)pgm_read_word(&(allCharacters[charIndex]));
+    const uint8_t* charAddress = (const uint8_t*)pgm_read_word(&(allCharacters[charIndex]));
 
-    for (byte i = 0; i < 8; i++) buffer[i] = pgm_read_byte_near(charAddress + i);
+    for (uint8_t i = 0; i < 8; i++) buffer[i] = pgm_read_byte_near(charAddress + i);
 
     lcd.createChar(charIndex, buffer);
   }
@@ -60,11 +60,11 @@ void DisplayManagerSystem::initDisplay()
   return;
 }
 
-const __FlashStringHelper* DisplayManagerSystem::getMenuString(byte menuIndex) {
+const __FlashStringHelper* DisplayManagerSystem::getMenuString(uint8_t menuIndex) {
 
     if (menuIndex >= 12) return F(""); 
 
     return (const __FlashStringHelper*)pgm_read_word(&(menuItems[menuIndex]));
 }
 
-void DisplayManagerSystem::printMenuLine(byte menuIndex) { lcd.print(getMenuString(menuIndex)); }
+void DisplayManagerSystem::printMenuLine(uint8_t menuIndex) { lcd.print(getMenuString(menuIndex)); }

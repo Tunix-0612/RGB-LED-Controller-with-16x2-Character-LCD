@@ -1,21 +1,17 @@
-# ==========================================
-# 1. Derleme ve Düzenleyici Kalıntıları (Asla Yüklenme!)
-# ==========================================
 .pio/
 .vscode/
+
 firmware/.pio/
 firmware/.vscode/
-*.code-workspace
+firmware/deprecated/
 
-# Altium / Donanım Çıktı Kalıntıları
+*.code-workspace
+.directory
+
 Reports/
 Road Maps/
 *.LOG
 *.PcbDoc.htm
 
-# ==========================================
-# 2. Özel Kurallar (Sadece İstenenleri Al)
-# ==========================================
-# Altium output klasöründeki üretim dosyalarını yükle ama yedekleri/logları engelle
 hardware/*
 !hardware/output/

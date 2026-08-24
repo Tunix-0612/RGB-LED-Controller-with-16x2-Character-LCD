@@ -22,7 +22,7 @@ enum ButtonEvent
 
 struct ButtonState
 {
-  byte pin;
+  uint8_t pin;
   bool lastRawState;
   bool debouncedState;
   unsigned long lastDebounceTime;
@@ -38,7 +38,7 @@ class InputManager
     const unsigned long longPressTime = 800;
 
   public:
-    InputManager(byte pinUp, byte pinDown, byte pinLeft, byte pinRight);
+    InputManager(uint8_t pinUp, uint8_t pinDown, uint8_t pinLeft, uint8_t pinRight);
 
     void begin();
     void update();

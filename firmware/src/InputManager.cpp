@@ -1,13 +1,13 @@
 #include "InputManager.h"
 
-InputManager::InputManager(byte pinUp, byte pinDown, byte pinLeft, byte pinRight) 
+InputManager::InputManager(uint8_t pinUp, uint8_t pinDown, uint8_t pinLeft, uint8_t pinRight) 
 {
   buttons[BTN_UP].pin = pinUp;
   buttons[BTN_DOWN].pin = pinDown;
   buttons[BTN_LEFT].pin = pinLeft;
   buttons[BTN_RIGHT].pin = pinRight;
 
-  for (byte i = 0; i < BTN_COUNT; i++) 
+  for (uint8_t i = 0; i < BTN_COUNT; i++) 
   {
     buttons[i].lastRawState = HIGH;
     buttons[i].debouncedState = HIGH;
@@ -17,13 +17,13 @@ InputManager::InputManager(byte pinUp, byte pinDown, byte pinLeft, byte pinRight
   }
 }
 
-void InputManager::begin() { for (byte i = 0; i < BTN_COUNT; i++) pinMode(buttons[i].pin, INPUT_PULLUP); }
+void InputManager::begin() { for (uint8_t i = 0; i < BTN_COUNT; i++) pinMode(buttons[i].pin, INPUT_PULLUP); }
 
 void InputManager::update() 
 {
   unsigned long currentMillis = millis();
 
-  for (byte i = 0; i < BTN_COUNT; i++) 
+  for (uint8_t i = 0; i < BTN_COUNT; i++) 
   {
     bool rawRead = digitalRead(buttons[i].pin);
     if (rawRead != buttons[i].lastRawState) 
