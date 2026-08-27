@@ -127,7 +127,12 @@ void TErrorManager::errorHandler(ErrorCode code) // --- Standart Error Handlers
 
     case ErrorCode::INTEGRITY_ERROR:
 
-      while(true); // Broken Partition Table, force factory reset
+      lcd.clear();
+      lcd.print(errorCodeStr);
+      lcd.print(F(" Integrity err"));
+      lcd.setCursor(0, 1);
+      lcd.print(F("Pls factory res."));
+      while(digitalRead(Pins::BUTTON_RIGHT) == HIGH);
       break;
 
     default:

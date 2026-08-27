@@ -315,25 +315,26 @@ void MenuSystem::RGBConfigMenu()
 
 uint8_t MenuSystem::getNextValidAscii(uint8_t currentVal, bool increment)
 {
+  if (currentVal < 32 || currentVal > 122) return 32;
+
   if (increment) 
   {
-    currentVal++;
-    if (currentVal < 32) return 32;
-    if (currentVal > 32 && currentVal < 48) return 48;
-    if (currentVal > 57 && currentVal < 65) return 65;
-    if (currentVal > 90 && currentVal < 97) return 97;
-    if (currentVal > 122) return 32;
+    if (currentVal == 32) return 39;
+    if (currentVal == 39) return 48;
+    if (currentVal == 57) return 65;
+    if (currentVal == 90) return 97;
+    if (currentVal == 122) return 32;
+    return currentVal + 1;
   } 
   else 
   {
-    currentVal--;
-    if (currentVal < 32 || currentVal > 122)  return 122;
-    if (currentVal > 32 && currentVal < 48)   return 32;
-    if (currentVal > 57 && currentVal < 65)   return 57;
-    if (currentVal > 90 && currentVal < 97)   return 90;
+    if (currentVal == 32) return 122;
+    if (currentVal == 39) return 32;
+    if (currentVal == 48) return 39;
+    if (currentVal == 65) return 57;
+    if (currentVal == 97) return 90;
+    return currentVal - 1;
   }
-  
-  return currentVal;
 }
 
 void MenuSystem::idleScreenTextMenu() 
@@ -346,11 +347,28 @@ void MenuSystem::idleScreenTextMenu()
   uint32_t FAST_CHANGE_INTERVAL = 150;
 
   lcd.clear();
-  lcd.print(memory.displayText.idleTextUp);
+  lcd.setCursor(0, 0);
+
+  for (uint8_t i = 0; i < 16; i++) 
+  {
+    char c = memory.displayText.idleTextUp[i];
+    if (c < 32 || c > 122) c = ' ';
+    memory.displayText.idleTextUp[i] = c;
+    lcd.print(c);
+  }
+
   lcd.setCursor(0, 1);
-  lcd.print(memory.displayText.idleTextBottom);
+
+  for (uint8_t i = 0; i < 16; i++) 
+  {
+    char c = memory.displayText.idleTextBottom[i];
+    if (c < 32 || c > 122) c = ' ';
+    memory.displayText.idleTextBottom[i] = c;
+    lcd.print(c);
+  }
+
   lcd.cursor();
-  lcd.blink();
+
   while(true)
   {
     inputManager.update();
@@ -360,7 +378,7 @@ void MenuSystem::idleScreenTextMenu()
 
     lcd.setCursor(cursorPose, cursorLine);
     if (cursorLine == 0) charCurrentByte = memory.displayText.idleTextUp[cursorPose];
-    else charCurrentByte = memory.displayText.idleTextBottom[cursorPose];
+    else                 charCurrentByte = memory.displayText.idleTextBottom[cursorPose];
 
     uint32_t currentMillis = millis();
 
@@ -369,42 +387,43 @@ void MenuSystem::idleScreenTextMenu()
       if (inputManager.isPressed(BTN_UP))
       {
         timeOut = 0;
-
         charCurrentByte = getNextValidAscii(charCurrentByte, true);
-        lcd.print((char)charCurrentByte);
 
         if (cursorLine == 0) memory.displayText.idleTextUp[cursorPose] = charCurrentByte;
-        else memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
-        
+        else                 memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
+
+        lcd.print((char)charCurrentByte);
+        lcd.setCursor(cursorPose, cursorLine);
         lastFastChangeMillis = currentMillis;
       }
-
-      if (inputManager.isPressed(BTN_DOWN))
+      else if (inputManager.isPressed(BTN_DOWN))
       {
         timeOut = 0;
-
         charCurrentByte = getNextValidAscii(charCurrentByte, false);
-        lcd.print((char)charCurrentByte);
 
         if (cursorLine == 0) memory.displayText.idleTextUp[cursorPose] = charCurrentByte;
-        else memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
+        else                 memory.displayText.idleTextBottom[cursorPose] = charCurrentByte;
 
+        lcd.print((char)charCurrentByte);
+        lcd.setCursor(cursorPose, cursorLine);
         lastFastChangeMillis = currentMillis;
-      }
-      if (eventRight == BTN_EVENT_CLICK) 
-      {
-        timeOut = 0;
-        cursorPose++;
-        if (cursorPose > 15) 
-        {
-          cursorPose = 0;
-          cursorLine++;
-          if (cursorLine > 1) cursorLine = 0;
-        }
       }
     }
 
-    if(eventLeft == BTN_EVENT_CLICK)
+    if (eventRight == BTN_EVENT_CLICK) 
+    {
+      timeOut = 0;
+      cursorPose++;
+      if (cursorPose > 15) 
+      {
+        cursorPose = 0;
+        cursorLine++;
+        if (cursorLine > 1) cursorLine = 0;
+      }
+      lcd.setCursor(cursorPose, cursorLine);
+    }
+
+    if (eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
       break;
@@ -414,12 +433,19 @@ void MenuSystem::idleScreenTextMenu()
     timeOut++;
     if (timeOut > 6000) break;
   }
+
   lcd.noCursor();
   lcd.noBlink();
-  memory.writeData(PartID::DISPLAY_TEXT, memory.displayText);
+
+  memory.displayText.idleTextUp[16] = '\0';
+  memory.displayText.idleTextBottom[16] = '\0';
+
+  memory.writeData(TMemoryManager::PartitionID::DISPLAY_TEXT, memory.displayText);
+
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
+
   inputManager.update();
   settingsMenuWrite();
 }
@@ -629,9 +655,9 @@ void MenuSystem::LDRManagementMenuText()
   lcd.setCursor(13, 0);
   lcd.print(LDRValue);
 
-  lcd.setCursor(9, 0);
-  lcd.print("Active");
-  lcd.setCursor(13, 1);
+  lcd.setCursor(10, 0);
+  lcd.print("Enable");
+  lcd.setCursor(12, 1);
   if (memory.settings.LDRActive) lcd.print(" ON");
   else                           lcd.print("OFF");
   

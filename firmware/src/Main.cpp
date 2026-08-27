@@ -2,27 +2,29 @@
     Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
     Arduino Nano
-    Version: v1.5.0-beta.1+build.2608B
+    Version: v1.5.0-beta.2+build.2608C
 
     ---------------------------------------------------------
     CHANGELOG
     ---------------------------------------------------------
     [Added]
-    - Complete update to T Core Modules v4.0.0
-      * Might encounter memory wipe
-      * Memory access commands are re-organized
-    -
+    - 
 
     [Changed]
-    - Variables are being converted to C++ counterparts
-      * Eg. int -> uint16_t
-    - Memory access modules are being updated with the new T Core 4.0.0 standards
+    - Idle Text's characterset changed to include " ' "
+    - Idle Text Setting Menu's string handling has been tweaked
+
 
     [Removed]
-    - Unrelated and unrequired definitions has been removed
+    - 
 
     [Fixed]
-    - 
+    - LDR Management screen text are re-aligned and re-written to match other menus
+    - Clock Enabled Function now works properly
+    - Device locks-up on the boot process has been fixed
+      * Newly updated devices are forced to factory reset
+
+    ### SOME CHANGES MAY NOT BE LISTED HERE.
     
 */
 
