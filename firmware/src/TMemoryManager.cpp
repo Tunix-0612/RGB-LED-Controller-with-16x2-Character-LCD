@@ -16,6 +16,7 @@ void TMemoryManager::begin()
 
   readData(PartitionID::VERSION, eepromVersion);
   readData(PartitionID::SETTINGS, settings);
+  readData(PartitionID::DISPLAY_TEXT, displayText);
 }
 
 ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint16_t newCount)

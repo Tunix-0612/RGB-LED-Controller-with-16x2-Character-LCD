@@ -12,12 +12,13 @@ class MenuSystem
     uint32_t lastControlMillis = 0;
     bool lastIntervalState = false;
 
+    bool clockIsSet = false;
+
     uint8_t settingsMenuCursor = 1;
     uint8_t RGBConfigMenuCursor = 1;
 
     uint16_t currentTime = 720;
     uint16_t LDRValue;
-    uint8_t LDRLimitPerc;
     uint8_t lcdBacklightPerc;
     uint16_t timeOut;
     bool LDRActivated;
@@ -31,7 +32,7 @@ class MenuSystem
     void brightnessMenuWrite();
     void screenBrightnessMenuWrite();
     void screenOffStateMenuWrite();
-    void LDRManagementMenuText();
+    void LDRManagementMenuText(bool focusOnLDRActive);
     void timerSettingsMenuWrite(bool focusOnStart);
     void setClockMenuWrite(bool focusOnActivation);
     void settingsMenuWrite();

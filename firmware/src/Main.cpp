@@ -2,30 +2,30 @@
     Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
     Arduino Nano
-    Version: v1.5.0-beta.2+build.2608C
+    Version: v1.5.0+build.2609A
 
-    ---------------------------------------------------------
-    CHANGELOG
-    ---------------------------------------------------------
-    [Added]
-    - 
+---------------------------------------------------------
+# CHANGELOG
+---------------------------------------------------------
+### Added
+- 
 
-    [Changed]
-    - Idle Text's characterset changed to include " ' "
-    - Idle Text Setting Menu's string handling has been tweaked
+### Changed
+- LDR Limit's storage and reading method has been changed.
+- LDR Check is suited for new type of value reading method.
 
+### Removed
+-
 
-    [Removed]
-    - 
+### Fixed
+- Idle Text dissapeared after device restart is fixed.
+- Timer menu's timeOut problems has been fixed.
+- LDR Limit percentage control has been fixed.
+- LDR is now able to be enabled/disabled in the LDR Management menu.
+- Now Timer doesn't advance unless the clock is set. (Clock must be set to enable Timer)
 
-    [Fixed]
-    - LDR Management screen text are re-aligned and re-written to match other menus
-    - Clock Enabled Function now works properly
-    - Device locks-up on the boot process has been fixed
-      * Newly updated devices are forced to factory reset
+### SOME CHANGES MAY NOT BE LISTED HERE.
 
-    ### SOME CHANGES MAY NOT BE LISTED HERE.
-    
 */
 
 #include "Constants.h"

@@ -49,6 +49,8 @@ bool MenuSystem::checkLDR()
   if (LDRActivated || LDRDisabled) return false; 
 
   LDRValue = analogRead(Pins::LDR);
+
+  LDRValue = map(LDRValue, 0, 1023, 100, 0);
   
   if (LDRValue > memory.settings.LDRLimit && LEDController.getLEDState()) 
   {
@@ -197,13 +199,13 @@ void MenuSystem::idleScreen()
     
     if (memory.settings.LDRActive && checkLDR()) idleTextPrint();
 
-    if (memory.settings.timerActive && updateClockAndControl()) idleTextPrint();
+    if (memory.settings.timerActive && clockIsSet && updateClockAndControl()) idleTextPrint();
 
     uptime = millis();
     if (uptime < oldUptime) uptimeFlag++;
 
     uint32_t currentMillis = millis();
-    if (currentMillis - lastClockBlinkMillis >= 750 && !coldBootClockSet) 
+    if (currentMillis - lastClockBlinkMillis >= 750 && !coldBootClockSet && memory.settings.timerActive) 
     {
       lastClockBlinkMillis = currentMillis;
       clockBlinkState = !clockBlinkState;
@@ -643,21 +645,22 @@ void MenuSystem::screenOffStateMenu()
   settingsMenuWrite();
 }
 
-void MenuSystem::LDRManagementMenuText() 
+void MenuSystem::LDRManagementMenuText(bool focusOnLDRActive) 
 {
   lcd.clear();
   lcd.write(GEAR_CHAR);
   lcd.print(F(" Limit"));
-  lcd.setCursor(5, 1);
-  lcd.print(LDRLimitPerc);
+  lcd.setCursor(2, 1);
+  if(!focusOnLDRActive)  lcd.print(F(">"));
+  else                  lcd.print(F(" "));
+  lcd.print(memory.settings.LDRLimit);
   lcd.print(F("%"));
-  LDRValue = map(analogRead(Pins::LDR), 0, 1023, 0, 100);
-  lcd.setCursor(13, 0);
-  lcd.print(LDRValue);
 
   lcd.setCursor(10, 0);
   lcd.print("Enable");
-  lcd.setCursor(12, 1);
+  lcd.setCursor(11, 1);
+  if(focusOnLDRActive)  lcd.print(F(">"));
+  else                   lcd.print(F(" "));
   if (memory.settings.LDRActive) lcd.print(" ON");
   else                           lcd.print("OFF");
   
@@ -669,43 +672,57 @@ void MenuSystem::LDRManagementMenu()
 
   bool focusOnLDRActive = false;
 
-  LDRLimitPerc = map(memory.settings.LDRLimit, 0, 1023, 0, 100);
-  LDRManagementMenuText();
+  LDRManagementMenuText(focusOnLDRActive);
   while(true) 
   {
     inputManager.update();
     
     ButtonEvent eventLeft  = inputManager.getEvent(BTN_LEFT);
     ButtonEvent eventRight = inputManager.getEvent(BTN_RIGHT);
+    ButtonEvent eventUp    = inputManager.getEvent(BTN_UP);
+    ButtonEvent eventDown  = inputManager.getEvent(BTN_DOWN);
+
+    bool isUpPressed   = inputManager.isPressed(BTN_UP);
+    bool isDownPressed = inputManager.isPressed(BTN_DOWN);
 
     uint32_t currentMillis = millis();
-    if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
+    if (!focusOnLDRActive)
     {
-      if (inputManager.isPressed(BTN_UP))
+      if (isUpPressed || isDownPressed)
       {
-        LDRLimitPerc += 5;
-        timeOut = 0;
-        LDRLimitPerc = constrain(LDRLimitPerc, 0, 100);
-        memory.settings.LDRLimit = map(LDRLimitPerc, 0, 100, 0, 1023);
-        LDRManagementMenuText();
-        lastFastChangeMillis = currentMillis;
+        if (currentMillis - lastFastChangeMillis >= FAST_CHANGE_INTERVAL)
+        {
+          timeOut = 0;
+          
+          if (isUpPressed)
+          {
+            if (memory.settings.LDRLimit <= 95) memory.settings.LDRLimit += 5;
+            else memory.settings.LDRLimit = 100;
+          }
+          
+          if (isDownPressed)
+          {
+            if (memory.settings.LDRLimit >= 5) memory.settings.LDRLimit -= 5;
+            else memory.settings.LDRLimit = 0;
+          }
+
+          LDRManagementMenuText(focusOnLDRActive);
+          lastFastChangeMillis = currentMillis;
+        }
       }
-      
-      if (inputManager.isPressed(BTN_DOWN))
-      {
-        LDRLimitPerc -= 5;
-        timeOut = 0;
-        LDRLimitPerc = constrain(LDRLimitPerc, 0, 100);
-        memory.settings.LDRLimit = map(LDRLimitPerc, 0, 100, 0, 1023);
-        LDRManagementMenuText();
-        lastFastChangeMillis = currentMillis;
-      }
+    }
+    else if (eventUp == BTN_EVENT_CLICK || eventDown == BTN_EVENT_CLICK)
+    {
+      timeOut = 0;
+      memory.settings.LDRActive = !memory.settings.LDRActive;
+      LDRManagementMenuText(focusOnLDRActive);
     }
 
     if (eventRight == BTN_EVENT_CLICK)
     {
+      timeOut = 0;
       focusOnLDRActive = !focusOnLDRActive;
-      LDRManagementMenuText();
+      LDRManagementMenuText(focusOnLDRActive);
     }
 
     if (eventLeft == BTN_EVENT_CLICK)
@@ -915,6 +932,7 @@ void MenuSystem::setClockMenu(bool coldBoot)
     }
     else if (eventUp == BTN_EVENT_CLICK || eventDown == BTN_EVENT_CLICK) 
     {
+      timeOut = 0;
       memory.settings.timerActive = !memory.settings.timerActive;
       setClockMenuWrite(focusOnClockEnable);
     }
@@ -929,6 +947,7 @@ void MenuSystem::setClockMenu(bool coldBoot)
     if (eventLeft == BTN_EVENT_CLICK) 
     {
       timeOut = 0;
+      clockIsSet = true;
       break;
     }
 
