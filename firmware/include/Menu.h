@@ -29,7 +29,7 @@ class MenuSystem
     void infoDisplayWrite();
     void RGBConfigMenuWrite();
     uint8_t getNextValidAscii(uint8_t currentVal, bool increment);
-    void brightnessMenuWrite();
+    void brightnessMenuWrite(uint8_t ledBrightness);
     void screenBrightnessMenuWrite();
     void screenOffStateMenuWrite();
     void LDRManagementMenuText(bool focusOnLDRActive);

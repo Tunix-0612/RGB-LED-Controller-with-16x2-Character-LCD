@@ -41,8 +41,8 @@ struct VersionInfo
 
 namespace SystemVersion 
 {
-  constexpr VersionInfo FIRMWARE = {1, 5, 0};
-  constexpr VersionInfo MIN_SUPPORTED = {1, 5, 0};
+  constexpr VersionInfo FIRMWARE = {1, 5, 1};
+  constexpr VersionInfo MIN_SUPPORTED = {1, 5, 1};
 }
 
 // --- ERROR CODES ---

@@ -2,7 +2,7 @@
     Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
     Arduino Nano
-    Version: v1.5.0+build.2609A
+    Version: v1.5.1+build.2609B
 
 ---------------------------------------------------------
 # CHANGELOG
@@ -11,18 +11,14 @@
 - 
 
 ### Changed
-- LDR Limit's storage and reading method has been changed.
-- LDR Check is suited for new type of value reading method.
+- Brightness menu's screen handler now uses parameter to display the current brightness value.
 
 ### Removed
 -
 
 ### Fixed
-- Idle Text dissapeared after device restart is fixed.
-- Timer menu's timeOut problems has been fixed.
-- LDR Limit percentage control has been fixed.
-- LDR is now able to be enabled/disabled in the LDR Management menu.
-- Now Timer doesn't advance unless the clock is set. (Clock must be set to enable Timer)
+- Slight Screen Optimization for the LED Brightness Menu
+- Now the LED Brightness Menu displays the current brightness value in real-time as the user adjusts it, providing immediate feedback on the changes being made.
 
 ### SOME CHANGES MAY NOT BE LISTED HERE.
 

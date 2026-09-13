@@ -452,7 +452,7 @@ void MenuSystem::idleScreenTextMenu()
   settingsMenuWrite();
 }
 
-void MenuSystem::brightnessMenuWrite() 
+void MenuSystem::brightnessMenuWrite(uint8_t ledBrightness) 
 {
   lcd.clear();
   lcd.write(GEAR_CHAR);
@@ -460,7 +460,7 @@ void MenuSystem::brightnessMenuWrite()
   lcd.print(memory.settings.selectedBrightness);
   lcd.print(F(" Brightness"));
   lcd.setCursor(0, 1);
-  uint8_t ledBrightness = LEDController.getLEDBrightness();
+
   lcd.print(ledBrightness);
   lcd.print(F(" (0-255)"));
 }
@@ -482,8 +482,8 @@ void MenuSystem::brightnessMenu()
 
   uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
-  brightnessMenuWrite();
   uint8_t ledBrightness = LEDController.getLEDBrightness();
+  brightnessMenuWrite(ledBrightness);
   while(true) 
   {
     inputManager.update();
@@ -498,7 +498,7 @@ void MenuSystem::brightnessMenu()
         timeOut = 0;
         ledBrightness = constrain(ledBrightness, 0, 255);
         LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
-        brightnessMenuWrite();
+        brightnessMenuWrite(ledBrightness);
         lastFastChangeMillis = currentMillis;
       }
 
@@ -508,7 +508,7 @@ void MenuSystem::brightnessMenu()
         timeOut = 0;
         ledBrightness = constrain(ledBrightness, 0, 255);
         LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
-        brightnessMenuWrite();
+        brightnessMenuWrite(ledBrightness);
         lastFastChangeMillis = currentMillis;
       }
     }
