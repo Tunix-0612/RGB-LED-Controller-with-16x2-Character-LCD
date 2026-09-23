@@ -278,13 +278,15 @@ ErrorCode TMemoryManager::firmwareValidate()
     // --- Generic update path
     
     // Save the new firmware version to EEPROM
-    eepromVersion = SystemVersion::FIRMWARE;
-    writeData(PartitionID::SETTINGS, settings);
-    writeData(PartitionID::VERSION, eepromVersion);
+    
     
     while (true); // Lock the Device.
   }
 
+  eepromVersion = SystemVersion::FIRMWARE;
+  writeData(PartitionID::SETTINGS, settings);
+  writeData(PartitionID::VERSION, eepromVersion);
+  
   // If device is downgraded return the error/warning
   return ErrorCode::DOWNGRADED_FIRMWARE;
 }

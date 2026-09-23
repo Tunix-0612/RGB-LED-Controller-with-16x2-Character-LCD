@@ -11,14 +11,17 @@
 - 
 
 ### Changed
-- Brightness menu's screen handler now uses parameter to display the current brightness value.
+- Changed the writing of the firmware version and settings to EEPROM in the TMemoryManager::firmwareValidate() function to ensure that the new firmware version is saved before locking the device. This prevents potential issues with version tracking and settings persistence after a firmware update.
 
 ### Removed
--
+- 
 
 ### Fixed
-- Slight Screen Optimization for the LED Brightness Menu
-- Now the LED Brightness Menu displays the current brightness value in real-time as the user adjusts it, providing immediate feedback on the changes being made.
+- 
+
+### Notes
+- Brightness control bugs will be fixed on the next minor update.
+- Next update will standardize the new T Core Module update instead of the Modified version.
 
 ### SOME CHANGES MAY NOT BE LISTED HERE.
 
@@ -31,7 +34,7 @@
 
 #include "InputManager.h" // v1.0.0
 
-// v4.0.0
+// v4.0.0 - MODIFIED (PRE-VIEW OF THE NEXT PATCHES)
 #include "TErrorManager.h"
 #include "TMemoryManager.h"
 #include "TSelfTest.h"

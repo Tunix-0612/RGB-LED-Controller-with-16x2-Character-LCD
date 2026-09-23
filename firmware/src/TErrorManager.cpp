@@ -66,7 +66,7 @@ void TErrorManager::errorHandler(ErrorCode code) // --- Standart Error Handlers
       break;
 
     case ErrorCode::DOWNGRADED_FIRMWARE:
-
+    
       lcd.clear();
       lcd.print(errorCodeStr);
       lcd.print(F(" Firmware Incons. Error"));
@@ -79,7 +79,6 @@ void TErrorManager::errorHandler(ErrorCode code) // --- Standart Error Handlers
         lcd.scrollDisplayLeft();
       }
       while(digitalRead(Pins::BUTTON_RIGHT) == HIGH);
-      memory.factoryReset();
 
       break;
 
