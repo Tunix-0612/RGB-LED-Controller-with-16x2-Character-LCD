@@ -19,13 +19,13 @@ void TMemoryManager::begin()
   readData(PartitionID::DISPLAY_TEXT, displayText);
 }
 
-ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint16_t newCount)
+StatusCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint16_t newCount)
 {
   // Get the ID.
   uint8_t index = static_cast<uint8_t>(id);
 
   // If ID exceedes the maximimum return ACCESS_VIOLATION.
-  if (index >= MAX_PARTITIONS) return ErrorCode::ACCESS_VIOLATION;
+  if (index >= MAX_PARTITIONS) return StatusCode::ACCESS_VIOLATION;
 
   // In case of a system shutdown while Partitioning.
   EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_PROGRESS);
@@ -39,7 +39,7 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
     partitionTable[index].count = newCount;
     EEPROM.put(HEADER_START_ADDRESS, partitionTable);
     EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_COMMITTED); // Mark as Transaction finished succseffuly.
-    return ErrorCode::NONE;
+    return StatusCode::NONE;
   }
 
   // If partition is a new partition.
@@ -49,7 +49,7 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
     else
     {
       // Find the last active Partition's End Address
-      for (int i = index - 1; i >= 0; i--)
+      for (int16_t i = (int16_t)index - 1; i >= 0; i--)
       {
         if (partitionTable[i].size > 0 && partitionTable[i].count > 0)
         {
@@ -63,7 +63,7 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
     }
   }
 
-  int shiftAmount = static_cast<int>(newTotalSize) - static_cast<int>(oldTotalSize);
+  int16_t shiftAmount = (int16_t)newTotalSize - (int16_t)oldTotalSize;
   uint8_t nextIndex = index + 1;
 
   // Calculate the addresses of data that has to be migrated
@@ -88,7 +88,7 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
   if (!hasSubsequentData)
   {
     // EEPROM Limit check
-    if (partitionTable[index].startAddress + newTotalSize > _EEPROMSize) return ErrorCode::EEPROM_FULL;
+    if (partitionTable[index].startAddress + newTotalSize > _EEPROMSize) return StatusCode::EEPROM_FULL;
 
     // If Partition is deleted by 0 as size, delete the start address as well
     if (newTotalSize == 0) partitionTable[index].startAddress = 0;
@@ -96,11 +96,11 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
     partitionTable[index].count = newCount;
     EEPROM.put(HEADER_START_ADDRESS, partitionTable);
     EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_COMMITTED); // Mark as Transaction finished succseffuly.
-    return ErrorCode::NONE;
+    return StatusCode::NONE;
   }
 
   // EEPROM Limit check
-  if (shiftAmount > 0 && (moveEndAddress + shiftAmount) > _EEPROMSize) return ErrorCode::EEPROM_FULL;
+  if (shiftAmount > 0 && (moveEndAddress + shiftAmount) > _EEPROMSize) return StatusCode::EEPROM_FULL;
 
   // Shift data on the EEPROM
   if (shiftAmount > 0) // Shift forward (From End to Start)
@@ -134,7 +134,7 @@ ErrorCode TMemoryManager::resizePartition(PartitionID id, uint16_t newSize, uint
   EEPROM.put(HEADER_START_ADDRESS, partitionTable);
 
   EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_COMMITTED); // Mark as Transaction finished succseffuly.
-  return ErrorCode::NONE;
+  return StatusCode::NONE;
 }
 
 void TMemoryManager::initPartitionTable()
@@ -189,7 +189,7 @@ uint16_t TMemoryManager::getAddress(PartitionID id, uint16_t itemIndex)
     uint8_t idIndex = static_cast<uint8_t>(id);
     PartitionEntry& entry = partitionTable[idIndex];
 
-    if (itemIndex >= entry.count) errorManager.errorHandler(ErrorCode::ACCESS_VIOLATION);
+    if (itemIndex >= entry.count) errorManager.errorHandler(StatusCode::ACCESS_VIOLATION);
 
     return entry.startAddress + (itemIndex * entry.size);
 }
@@ -205,7 +205,7 @@ void TMemoryManager::loadPartitionTable()
   // If there is a signature error or failed update attempt re-initialize Partition Table.
   if (signature != DEVICE_SIGNATURE || transactionFlag == TRANSACTION_PROGRESS)
   {
-    errorManager.errorHandler(ErrorCode::INTEGRITY_ERROR);
+    errorManager.errorHandler(StatusCode::INTEGRITY_ERROR);
 
     initPartitionTable();
   }
@@ -222,10 +222,10 @@ void TMemoryManager::factoryReset()
   displayTextStruct defaultDisplayText;
   RGBConfig defaultRGBConfig;
 
-  defaultSettings.brightnessMode2 = 135;
-  defaultSettings.brightnessMode3 = 60;
-  defaultSettings.brightnessMode4 = 15;
-  defaultSettings.selectedBrightness = 1;
+  defaultSettings.brightnessModeValue[0] = 135;
+  defaultSettings.brightnessModeValue[1] = 60;
+  defaultSettings.brightnessModeValue[2] = 15;
+  defaultSettings.selectedBrightnessIndex = 1;
   defaultSettings.selectedConfig = 0;
   defaultSettings.totalConfig = 1;
   defaultSettings.startTime = 1095;
@@ -257,38 +257,47 @@ void TMemoryManager::factoryReset()
 }
 
 // Validate the firmware versions
-ErrorCode TMemoryManager::firmwareValidate()
+StatusCode TMemoryManager::firmwareValidate()
 {
   // If no version difference, return no error
-  if (eepromVersion == SystemVersion::FIRMWARE) return ErrorCode::NONE;
+  if (eepromVersion == SystemVersion::FIRMWARE) return StatusCode::NONE;
 
   // If the firmware version is greater than the EEPROM version, it means the firmware has been updated.
   if (eepromVersion < SystemVersion::FIRMWARE)
   {
     // If the EEPROM version is less than the minimum supported version, return an error.
-    if (eepromVersion < SystemVersion::MIN_SUPPORTED) return ErrorCode::VERSION_NOT_SUPPORTED;
+    if (eepromVersion < SystemVersion::MIN_SUPPORTED) return StatusCode::VERSION_NOT_SUPPORTED;
 
     delay(2000);
 
-    if (eepromVersion == VersionInfo{1, 4, 2}) // --- Example version declare.
+    EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_PROGRESS); // Mark as Transaction in progress.
+
+    if (eepromVersion < VersionInfo{1, 6, 0, 'B', 1}) 
     {
-      // --- Version Specific Update/Fix Example
+      // This is a firmware update for the versions older than 1.6.0-B1
+      // Which changes the brightnessMode's read/write logic
+      settings.brightnessModeValue[0] = 135;
+      settings.brightnessModeValue[1] = 60;
+      settings.brightnessModeValue[2] = 15;
+      settings.selectedBrightnessIndex = 0;
     }
 
     // --- Generic update path
+
+    eepromVersion = SystemVersion::FIRMWARE;
+    writeData(PartitionID::VERSION, eepromVersion);
     
-    // Save the new firmware version to EEPROM
-    
-    
-    while (true); // Lock the Device.
+    EEPROM.put(TRANSACTION_FLAG_ADRESS, TRANSACTION_COMMITTED); // Mark as Transaction finished succseffuly.
+
+    return StatusCode::OPERATION_OK;
   }
 
+  // Save the new firmware version to EEPROM
   eepromVersion = SystemVersion::FIRMWARE;
-  writeData(PartitionID::SETTINGS, settings);
   writeData(PartitionID::VERSION, eepromVersion);
   
   // If device is downgraded return the error/warning
-  return ErrorCode::DOWNGRADED_FIRMWARE;
+  return StatusCode::DOWNGRADED_FIRMWARE;
 }
 
 // ---------------------------------------------
@@ -340,23 +349,4 @@ void TMemoryManager::deleteCurrentRGBConfig()
   if (settings.selectedConfig >= settings.totalConfig) settings.selectedConfig = settings.totalConfig - 1;
   writeData(PartitionID::SETTINGS, settings);
   loadRGBConfig(settings.selectedConfig);
-}
-
-uint8_t TMemoryManager::readBrightnessForMode(uint8_t mode) 
-{
-  if(mode == 1) return 255;
-  uint8_t val = 255;
-  if(mode == 2) val = settings.brightnessMode2;
-  if(mode == 3) val = settings.brightnessMode3;
-  if(mode == 4) val = settings.brightnessMode4;
-  if(val == 255 && mode != 1) return 125; 
-  return val;
-}
-
-void TMemoryManager::saveBrightnessForMode(uint8_t mode, uint8_t brightness)
-{
-  if(mode == 2) settings.brightnessMode2 = brightness;
-  if(mode == 3) settings.brightnessMode3 = brightness;
-  if(mode == 4) settings.brightnessMode4 = brightness;
-  writeData(PartitionID::SETTINGS, settings);
 }

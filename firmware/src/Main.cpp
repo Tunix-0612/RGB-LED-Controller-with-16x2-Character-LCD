@@ -2,26 +2,29 @@
     Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
     Arduino Nano
-    Version: v1.5.1+build.2609B
+    Version: v1.6.0-beta.1+build.2609D
 
 ---------------------------------------------------------
 # CHANGELOG
 ---------------------------------------------------------
 ### Added
-- 
+- Firmware Updated message is now displayed on the LCD when the firmware is updated successfully.
+- Info Screen now displays the phase and iteration of the firmware version.
 
 ### Changed
-- Changed the writing of the firmware version and settings to EEPROM in the TMemoryManager::firmwareValidate() function to ensure that the new firmware version is saved before locking the device. This prevents potential issues with version tracking and settings persistence after a firmware update.
+- T-Core Modules has been updated to v4.0.5.
+  * See the T-Core changelog for more details.
+- DOWNGRADED_FIRMWARE error now doesn't force a factory reset, instead it will display an error message and recommend it.
+- Some of the error codes have been updated with better UI and texts.
 
 ### Removed
-- 
+- Unrequired brightness related functions including individual EEPROM operations, Apply functions and helpers are removed.
 
 ### Fixed
-- 
+- Start-Up sequence now doesn't trigger the self-test twice.
 
 ### Notes
-- Brightness control bugs will be fixed on the next minor update.
-- Next update will standardize the new T Core Module update instead of the Modified version.
+- 
 
 ### SOME CHANGES MAY NOT BE LISTED HERE.
 
@@ -32,9 +35,10 @@
 #include "LEDControl.h"
 #include "Menu.h"
 
-#include "InputManager.h" // v1.0.0
+// v1.0.0
+#include "InputManager.h" 
 
-// v4.0.0 - MODIFIED (PRE-VIEW OF THE NEXT PATCHES)
+// v4.0.5
 #include "TErrorManager.h"
 #include "TMemoryManager.h"
 #include "TSelfTest.h"
@@ -61,6 +65,9 @@ void introductionDisplay()
 
 void setup() 
 {
+  StatusCode selfTestValue = deviceTest.selfTest();
+  if (selfTestValue != StatusCode::NONE) errorManager.errorHandler(selfTestValue);
+  
   inputManager.begin();
 
   pinMode(Pins::RGB_R, OUTPUT);
@@ -73,13 +80,20 @@ void setup()
   introductionDisplay();
 
   memory.begin();
-  ErrorCode firmwareErrorCode = memory.firmwareValidate();
-  if (firmwareErrorCode != ErrorCode::NONE) errorManager.errorHandler(firmwareErrorCode);
 
-  ErrorCode selfTestValue = deviceTest.selfTest();
-  if (selfTestValue != ErrorCode::NONE) errorManager.errorHandler(selfTestValue);
+  StatusCode firmwareErrorCode = memory.firmwareValidate();
+  if (firmwareErrorCode != StatusCode::NONE && firmwareErrorCode != StatusCode::OPERATION_OK) errorManager.errorHandler(firmwareErrorCode);
+
+  if (firmwareErrorCode == StatusCode::OPERATION_OK)
+  {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(F("Firmware Updated"));
+    delay(1000);
+  }
+
   memory.loadRGBConfig(memory.settings.selectedConfig);
-  LEDController.RGBBrigthnessRead();
+
   menu.setClockMenu(true);
   lcd.clear();
   menu.infoDisplay();
@@ -87,6 +101,6 @@ void setup()
 
 void loop() 
 {
-  errorManager.errorHandler(ErrorCode::PROGRAM_LOOP_FAILURE);
+  errorManager.errorHandler(StatusCode::PROGRAM_LOOP_FAILURE);
   while(true) delay(2000);
 }

@@ -42,11 +42,11 @@ bool TSelfTest::runRAMTest()
   return false; // All Registers are Healthy
 }
 
-ErrorCode TSelfTest::selfTest()
+StatusCode TSelfTest::selfTest()
 {
-	if(runRAMTest()) return ErrorCode::RAM_FAILURE;
+	if(runRAMTest()) return StatusCode::RAM_FAILURE;
 
   // --- Additional Self-Test Commands.
 
-	return ErrorCode::NONE;
+	return StatusCode::NONE;
 }

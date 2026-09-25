@@ -28,11 +28,9 @@ class TMemoryManager
     struct settingsStruct
     {
       uint8_t selectedConfig;
-      uint8_t selectedBrightness;
+      uint8_t selectedBrightnessIndex;
       uint8_t totalConfig;
-      uint8_t brightnessMode2;
-      uint8_t brightnessMode3;
-      uint8_t brightnessMode4;
+      uint8_t brightnessModeValue[3];
       uint8_t lcdBacklight;
       bool screenOffState;
       uint8_t LDRLimit;
@@ -78,15 +76,15 @@ class TMemoryManager
     void begin();
 
     void factoryReset();
-    ErrorCode firmwareValidate();
+    StatusCode firmwareValidate();
 
     // Write/Read Data to/from Partitions
     template <typename T>
     void writeData(PartitionID id, const T& data, uint16_t itemIndex = 0) 
     { 
       uint8_t idIndex = static_cast<uint8_t>(id);
-      if (idIndex >= MAX_PARTITIONS) errorManager.errorHandler(ErrorCode::ACCESS_VIOLATION);
-      if (sizeof(T) > partitionTable[idIndex].size) errorManager.errorHandler(ErrorCode::BUFFER_OVERFLOW);
+      if (idIndex >= MAX_PARTITIONS) errorManager.errorHandler(StatusCode::ACCESS_VIOLATION);
+      if (sizeof(T) > partitionTable[idIndex].size) errorManager.errorHandler(StatusCode::BUFFER_OVERFLOW);
       EEPROM.put(getAddress(id, itemIndex), data);
     }
 
@@ -94,8 +92,8 @@ class TMemoryManager
     void readData(PartitionID id, T& data, uint16_t itemIndex = 0) 
     { 
       uint8_t idIndex = static_cast<uint8_t>(id);
-      if (idIndex >= MAX_PARTITIONS) errorManager.errorHandler(ErrorCode::ACCESS_VIOLATION);
-      if (sizeof(T) > partitionTable[idIndex].size) errorManager.errorHandler(ErrorCode::BUFFER_OVERFLOW);
+      if (idIndex >= MAX_PARTITIONS) errorManager.errorHandler(StatusCode::ACCESS_VIOLATION);
+      if (sizeof(T) > partitionTable[idIndex].size) errorManager.errorHandler(StatusCode::BUFFER_OVERFLOW);
       EEPROM.get(getAddress(id, itemIndex), data);
     }
   
@@ -103,8 +101,6 @@ class TMemoryManager
     void saveRGBConfig(uint8_t index);
     void createNewRGBConfig();
     void deleteCurrentRGBConfig();
-    uint8_t readBrightnessForMode(uint8_t mode);
-    void saveBrightnessForMode(uint8_t mode, uint8_t brightness);
 
   private:
     // --- These constants holds the required information about partition table data ---
@@ -130,7 +126,7 @@ class TMemoryManager
     uint16_t _EEPROMSize;
     PartitionEntry partitionTable[MAX_PARTITIONS];
 
-    ErrorCode resizePartition(PartitionID id, uint16_t newSize, uint16_t newCount = 1);
+    StatusCode resizePartition(PartitionID id, uint16_t newSize, uint16_t newCount = 1);
     void initPartitionTable();
     uint16_t getAddress(PartitionID id, uint16_t itemIndex = 0);
     void loadPartitionTable();

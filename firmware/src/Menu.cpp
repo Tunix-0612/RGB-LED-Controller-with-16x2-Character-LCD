@@ -72,7 +72,7 @@ void MenuSystem::infoDisplayWrite()
   lcd.setCursor(0, 1);
   lcd.print(F("Bright: "));
   lcd.setCursor(8, 1);
-  lcd.print(memory.settings.selectedBrightness);
+  lcd.print(memory.settings.selectedBrightnessIndex);
   if (LDRActivated == true) 
   {
     lcd.setCursor(15, 1);
@@ -115,10 +115,14 @@ void MenuSystem::infoDisplay()
     if(eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
-      memory.settings.selectedBrightness++;
-      if (memory.settings.selectedBrightness > 4) memory.settings.selectedBrightness = 1;
-      LEDController.RGBBrigthnessRead();
-      LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+      memory.settings.selectedBrightnessIndex++;
+      if (memory.settings.selectedBrightnessIndex > 3) memory.settings.selectedBrightnessIndex = 0;
+
+      LEDController.RGBColorApply(memory.activeConfig.R, 
+        memory.activeConfig.G, 
+        memory.activeConfig.B, 
+        memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
+
       infoDisplayWrite();
     }
 
@@ -174,11 +178,15 @@ void MenuSystem::idleScreen()
     if (eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
-      memory.settings.selectedBrightness++;
-      if (memory.settings.selectedBrightness > 4) memory.settings.selectedBrightness = 1;
-      memory.writeData(PartID::SETTINGS, memory.settings);
-      LEDController.RGBBrigthnessRead();
-      LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+      
+      memory.settings.selectedBrightnessIndex++;
+      if (memory.settings.selectedBrightnessIndex > 3) memory.settings.selectedBrightnessIndex = 0;
+      
+      memory.writeData(PartID::SETTINGS, memory.settings);;
+      LEDController.RGBColorApply(memory.activeConfig.R, 
+        memory.activeConfig.G, 
+        memory.activeConfig.B,
+        memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
     }
 
     if (eventLeft == BTN_EVENT_LONG_PRESS)
@@ -267,7 +275,7 @@ void MenuSystem::RGBConfigMenu()
           uint8_t redValue = memory.activeConfig.R;
           uint8_t greenValue = memory.activeConfig.G;
           uint8_t blueValue = memory.activeConfig.B;
-          LEDController.RGBColorApply(redValue, greenValue, blueValue);
+          LEDController.RGBColorApply(redValue, greenValue, blueValue, memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
           RGBConfigMenuWrite();
           lastFastChangeMillis = currentMillis;
         }
@@ -281,7 +289,7 @@ void MenuSystem::RGBConfigMenu()
           uint8_t redValue = memory.activeConfig.R;
           uint8_t greenValue = memory.activeConfig.G;
           uint8_t blueValue = memory.activeConfig.B;
-          LEDController.RGBColorApply(redValue, greenValue, blueValue);
+          LEDController.RGBColorApply(redValue, greenValue, blueValue, memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
           RGBConfigMenuWrite();
           lastFastChangeMillis = currentMillis;
         }
@@ -457,7 +465,7 @@ void MenuSystem::brightnessMenuWrite(uint8_t ledBrightness)
   lcd.clear();
   lcd.write(GEAR_CHAR);
   lcd.print(F("Mode "));
-  lcd.print(memory.settings.selectedBrightness);
+  lcd.print(memory.settings.selectedBrightnessIndex);
   lcd.print(F(" Brightness"));
   lcd.setCursor(0, 1);
 
@@ -467,7 +475,7 @@ void MenuSystem::brightnessMenuWrite(uint8_t ledBrightness)
 
 void MenuSystem::brightnessMenu() 
 {
-  if (memory.settings.selectedBrightness == 1) 
+  if (memory.settings.selectedBrightnessIndex == 0) 
   {
     lcd.clear();
     lcd.write(GEAR_CHAR);
@@ -482,7 +490,8 @@ void MenuSystem::brightnessMenu()
 
   uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
-  uint8_t ledBrightness = LEDController.getLEDBrightness();
+  uint8_t &ledBrightness = memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex];
+
   brightnessMenuWrite(ledBrightness);
   while(true) 
   {
@@ -497,7 +506,7 @@ void MenuSystem::brightnessMenu()
         ledBrightness += 5;
         timeOut = 0;
         ledBrightness = constrain(ledBrightness, 0, 255);
-        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B, ledBrightness);
         brightnessMenuWrite(ledBrightness);
         lastFastChangeMillis = currentMillis;
       }
@@ -507,7 +516,7 @@ void MenuSystem::brightnessMenu()
         ledBrightness -= 5;
         timeOut = 0;
         ledBrightness = constrain(ledBrightness, 0, 255);
-        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+        LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B, ledBrightness);
         brightnessMenuWrite(ledBrightness);
         lastFastChangeMillis = currentMillis;
       }
@@ -523,7 +532,8 @@ void MenuSystem::brightnessMenu()
     timeOut++;
     if (timeOut > 1000) break;
   }
-  memory.saveBrightnessForMode(memory.settings.selectedBrightness, ledBrightness);
+
+  memory.writeData(PartID::SETTINGS, memory.settings);
   lcd.setCursor(15, 1);
   lcd.write(TICK_CHAR);
   delay(1000);
@@ -971,7 +981,13 @@ void MenuSystem::createNewRGBConfigMenu()
   if (memory.settings.totalConfig < 20) 
   {
     memory.createNewRGBConfig();
-    LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+    LEDController.RGBColorApply
+    (
+      memory.activeConfig.R, 
+      memory.activeConfig.G, 
+      memory.activeConfig.B, 
+      memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]
+    );
 
     lcd.clear();
     lcd.write(GEAR_CHAR);
@@ -996,7 +1012,14 @@ void MenuSystem::deleteRGBConfigMenu()
   if (memory.settings.totalConfig > 1) 
   {
     memory.deleteCurrentRGBConfig();
-    LEDController.RGBColorApply(memory.activeConfig.R, memory.activeConfig.G, memory.activeConfig.B);
+    LEDController.RGBColorApply
+    (
+      memory.activeConfig.R, 
+      memory.activeConfig.G, 
+      memory.activeConfig.B, 
+      memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]
+    );
+
     lcd.clear();
     lcd.write(GEAR_CHAR);
     lcd.print(F(" Config Deleted!"));
@@ -1024,6 +1047,9 @@ void MenuSystem::infoScreen()
   lcd.print(memory.eepromVersion.minor);
   lcd.print(F(".")); 
   lcd.print(memory.eepromVersion.patch);
+  lcd.setCursor(0, 1);
+  lcd.print(memory.eepromVersion.phase);
+  lcd.print(memory.eepromVersion.iteration);
   lcd.setCursor(9, 0);
   lcd.print(F("Uptime:")); 
   while(true) 

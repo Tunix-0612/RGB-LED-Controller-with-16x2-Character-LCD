@@ -19,12 +19,10 @@ class LEDControllerSystem
 
     bool ledOff = true;
 
-    void RGBColorApply(uint8_t targetRed, uint8_t targetGreen, uint8_t targetBlue);
+    void RGBColorApply(uint8_t targetRed, uint8_t targetGreen, uint8_t targetBlue, uint8_t brightness);
     void fadeAnimationEngine();
-    void RGBBrigthnessRead();
     void ledChange();
     bool getLEDState();
-    uint8_t getLEDBrightness();
 };
 
 extern LEDControllerSystem LEDController;

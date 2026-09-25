@@ -5,7 +5,7 @@
 
 LEDControllerSystem::LEDControllerSystem() { }
 
-void LEDControllerSystem::RGBColorApply(uint8_t targetRed, uint8_t targetGreen, uint8_t targetBlue)
+void LEDControllerSystem::RGBColorApply(uint8_t targetRed, uint8_t targetGreen, uint8_t targetBlue, uint8_t brightness)
 {
   if(ledOff == true)
   {
@@ -14,6 +14,9 @@ void LEDControllerSystem::RGBColorApply(uint8_t targetRed, uint8_t targetGreen, 
     analogWrite(Pins::RGB_B, 0);
     return;
   }
+
+  ledBrightness = brightness;
+
   uint16_t scaledRed = ((uint16_t)targetRed * ledBrightness) / 255;
   uint16_t scaledGreen = ((uint16_t)targetGreen * ledBrightness) / 255;
   uint16_t scaledBlue = ((uint16_t)targetBlue * ledBrightness) / 255;
@@ -65,7 +68,7 @@ void LEDControllerSystem::fadeAnimationEngine()
       lcd.write(CLOCK_CHAR);
       wasAnimating = true;
     }
-    RGBColorApply(currentRed, currentGreen, currentBlue);
+    RGBColorApply(currentRed, currentGreen, currentBlue, memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
   }
   else if (wasAnimating)
   {
@@ -76,16 +79,10 @@ void LEDControllerSystem::fadeAnimationEngine()
   return;
 }
 
-void LEDControllerSystem::RGBBrigthnessRead()
-{
-  ledBrightness = memory.readBrightnessForMode(memory.settings.selectedBrightness);
-  return;
-}
-
 void LEDControllerSystem::ledChange()
 {
   ledOff = !ledOff;
-  RGBColorApply(currentRed, currentGreen, currentBlue);
+  RGBColorApply(currentRed, currentGreen, currentBlue, memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
   lcd.display();
   analogWrite(Pins::LCD_BACKLIGHT, memory.settings.lcdBacklight);
   lcd.clear();
@@ -102,5 +99,3 @@ bool LEDControllerSystem::getLEDState()
   if (ledOff) return true;
   else return false;
 }
-
-uint8_t LEDControllerSystem::getLEDBrightness() { return ledBrightness; }

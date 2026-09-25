@@ -11,7 +11,7 @@ class TErrorManager
 
   public:
     TErrorManager();
-    void errorHandler(ErrorCode code);
+    void errorHandler(StatusCode code);
 };
 
 extern TErrorManager errorManager;

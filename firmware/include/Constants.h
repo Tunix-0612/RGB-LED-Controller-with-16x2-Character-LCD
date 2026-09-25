@@ -20,48 +20,91 @@ namespace Pins
 }
 
 // --- SOFTWARE VERSION ---
+#pragma pack(push, 1)
 struct VersionInfo 
 {
   uint8_t major;
   uint8_t minor;
   uint8_t patch;
 
+  char    phase;
+  uint8_t iteration;
+
+  // Get the phase value for comparison purposes
+  uint8_t getPhaseValue() const 
+  {
+    switch (phase) 
+    {
+      case 'A': return 1;
+      case 'B': return 2;
+      case 'R': return 3;
+      case 'S': return 4;
+      default:  return 0;
+    }
+  }
+
+  // Operators for comparison
   bool operator<(const VersionInfo& other) const 
   {
     if (major != other.major) return major < other.major;
     if (minor != other.minor) return minor < other.minor;
-    return patch < other.patch;
+    if (patch != other.patch) return patch < other.patch;
+
+    uint8_t w1 = getPhaseValue();
+    uint8_t w2 = other.getPhaseValue();
+    if (w1 != w2) return w1 < w2;
+
+    return iteration < other.iteration;
   }
 
   bool operator==(const VersionInfo& other) const 
   {
-    return major == other.major && minor == other.minor && patch == other.patch;
+    return major == other.major && 
+           minor == other.minor && 
+           patch == other.patch && 
+           phase == other.phase && 
+           iteration == other.iteration;
   }
 };
+#pragma pack(pop)
 
+// --- SYSTEM VERSION INFORMATION ---
+// Define the current firmware version and the minimum supported version
+// S = Stable, R = Release Candidate, B = Beta, A = Alpha
 namespace SystemVersion 
 {
-  constexpr VersionInfo FIRMWARE = {1, 5, 1};
-  constexpr VersionInfo MIN_SUPPORTED = {1, 5, 1};
+  // Stable > Release Candidate > Beta > Alpha
+  constexpr VersionInfo FIRMWARE      = {1, 6, 0, 'B', 1};
+  constexpr VersionInfo MIN_SUPPORTED = {1, 5, 0, 'S', 0};
 }
 
 // --- ERROR CODES ---
-enum class ErrorCode : uint16_t 
+
+// 0 = No Error, 100 = Operation Success, 101 = Operation Error
+// 11x = Firmware Related Errors/Warnings
+// 12x = EEPROM Related Errors/Warnings
+// 13x = Program Related Errors/Warnings
+// 14x = Internal RAM Related Errors/Warnings
+// ABC --> A = Main Error Source, B = Sub Error Source, C = Specific Error Code
+enum class StatusCode : uint16_t 
 {
   NONE                    =  0,
-  FIRMWARE_VERSION_ERROR  = 101,
-  VERSION_NOT_SUPPORTED   = 102,
-  DOWNGRADED_FIRMWARE     = 103,
+  OPERATION_OK            = 100,
+  OPERATION_ERROR         = 101,
 
-  PROGRAM_LOOP_FAILURE    = 111,
+  FIRMWARE_VERSION_ERROR  = 111,
+  VERSION_NOT_SUPPORTED   = 112,
+  DOWNGRADED_FIRMWARE     = 113,
 
-  RAM_FAILURE             = 121,
-  RAM_LOW                 = 122,
+  EEPROM_FULL             = 121,
+  ACCESS_VIOLATION        = 122,
+  BUFFER_OVERFLOW         = 123,
+  INTEGRITY_ERROR         = 124,
 
-  EEPROM_FULL             = 131,
-  ACCESS_VIOLATION        = 132,
-  BUFFER_OVERFLOW         = 133,
-  INTEGRITY_ERROR         = 134
+  PROGRAM_LOOP_FAILURE    = 131,
+
+  RAM_FAILURE             = 141,
+  RAM_LOW                 = 142
 
   // --- Additional Error Codes
 };

@@ -14,7 +14,7 @@ class TSelfTest
 		TSelfTest();
 	
 		int  getFreeRAM();
-		ErrorCode selfTest();
+		StatusCode selfTest();
 };
 
 extern TSelfTest deviceTest;
