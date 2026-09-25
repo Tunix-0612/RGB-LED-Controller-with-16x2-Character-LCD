@@ -2,26 +2,25 @@
     Tunix - Tunahan Bayraktar
     RGB LED and 2x16LCD Controller
     Arduino Nano
-    Version: v1.6.0-beta.1+build.2609D
+    Version: v1.6.0-beta.2+build.2609E
 
 ---------------------------------------------------------
 # CHANGELOG
 ---------------------------------------------------------
 ### Added
-- Firmware Updated message is now displayed on the LCD when the firmware is updated successfully.
-- Info Screen now displays the phase and iteration of the firmware version.
+- 
 
 ### Changed
-- T-Core Modules has been updated to v4.0.5.
-  * See the T-Core changelog for more details.
-- DOWNGRADED_FIRMWARE error now doesn't force a factory reset, instead it will display an error message and recommend it.
-- Some of the error codes have been updated with better UI and texts.
+- Brightness menu UI Draw methodes and variables has been tweaked for the new brightness mode type.
+- LED Change function has been tweaked tweaked for the new brightness mode type.
+- Info Screen's UI has been updated to show phase+iteration numbers more user friendly.
 
 ### Removed
-- Unrequired brightness related functions including individual EEPROM operations, Apply functions and helpers are removed.
+- 
 
 ### Fixed
-- Start-Up sequence now doesn't trigger the self-test twice.
+- The bug caused the LED Brightness settings cannot be changed compeletly fixed.
+- 
 
 ### Notes
 - 

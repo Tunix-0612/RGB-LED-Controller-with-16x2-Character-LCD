@@ -82,7 +82,15 @@ void LEDControllerSystem::fadeAnimationEngine()
 void LEDControllerSystem::ledChange()
 {
   ledOff = !ledOff;
-  RGBColorApply(currentRed, currentGreen, currentBlue, memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
+
+  uint8_t &index = memory.settings.selectedBrightnessIndex;
+  uint8_t brightness;
+
+  if (index == 0) brightness = 255;
+  else            brightness = memory.settings.brightnessModeValue[index - 1];
+
+  RGBColorApply(currentRed, currentGreen, currentBlue, brightness);
+
   lcd.display();
   analogWrite(Pins::LCD_BACKLIGHT, memory.settings.lcdBacklight);
   lcd.clear();

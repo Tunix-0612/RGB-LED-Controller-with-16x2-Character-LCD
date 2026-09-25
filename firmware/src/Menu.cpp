@@ -72,7 +72,7 @@ void MenuSystem::infoDisplayWrite()
   lcd.setCursor(0, 1);
   lcd.print(F("Bright: "));
   lcd.setCursor(8, 1);
-  lcd.print(memory.settings.selectedBrightnessIndex);
+  lcd.print(memory.settings.selectedBrightnessIndex + 1);
   if (LDRActivated == true) 
   {
     lcd.setCursor(15, 1);
@@ -115,13 +115,20 @@ void MenuSystem::infoDisplay()
     if(eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
-      memory.settings.selectedBrightnessIndex++;
-      if (memory.settings.selectedBrightnessIndex > 3) memory.settings.selectedBrightnessIndex = 0;
+
+      uint8_t brightness;
+      uint8_t &index = memory.settings.selectedBrightnessIndex;
+
+      index++;
+      if (index > 3) index = 0;
+
+      if (index == 0) brightness = 255;
+      else            brightness = memory.settings.brightnessModeValue[index - 1];
 
       LEDController.RGBColorApply(memory.activeConfig.R, 
         memory.activeConfig.G, 
         memory.activeConfig.B, 
-        memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
+        brightness);
 
       infoDisplayWrite();
     }
@@ -178,15 +185,20 @@ void MenuSystem::idleScreen()
     if (eventLeft == BTN_EVENT_CLICK)
     {
       timeOut = 0;
-      
-      memory.settings.selectedBrightnessIndex++;
-      if (memory.settings.selectedBrightnessIndex > 3) memory.settings.selectedBrightnessIndex = 0;
-      
-      memory.writeData(PartID::SETTINGS, memory.settings);;
+
+      uint8_t brightness;
+      uint8_t &index = memory.settings.selectedBrightnessIndex;
+
+      index++;
+      if (index > 3) index = 0;
+
+      if (index == 0) brightness = 255;
+      else            brightness = memory.settings.brightnessModeValue[index - 1];
+
       LEDController.RGBColorApply(memory.activeConfig.R, 
         memory.activeConfig.G, 
-        memory.activeConfig.B,
-        memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex]);
+        memory.activeConfig.B, 
+        brightness);
     }
 
     if (eventLeft == BTN_EVENT_LONG_PRESS)
@@ -465,7 +477,7 @@ void MenuSystem::brightnessMenuWrite(uint8_t ledBrightness)
   lcd.clear();
   lcd.write(GEAR_CHAR);
   lcd.print(F("Mode "));
-  lcd.print(memory.settings.selectedBrightnessIndex);
+  lcd.print(memory.settings.selectedBrightnessIndex + 1);
   lcd.print(F(" Brightness"));
   lcd.setCursor(0, 1);
 
@@ -487,10 +499,12 @@ void MenuSystem::brightnessMenu()
     settingsMenuWrite();
     return;
   }
+      
+  uint8_t index = memory.settings.selectedBrightnessIndex - 1;
 
   uint32_t lastFastChangeMillis = 0, FAST_CHANGE_INTERVAL = 150;
 
-  uint8_t &ledBrightness = memory.settings.brightnessModeValue[memory.settings.selectedBrightnessIndex];
+  uint8_t &ledBrightness = memory.settings.brightnessModeValue[index];
 
   brightnessMenuWrite(ledBrightness);
   while(true) 
@@ -1049,6 +1063,7 @@ void MenuSystem::infoScreen()
   lcd.print(memory.eepromVersion.patch);
   lcd.setCursor(0, 1);
   lcd.print(memory.eepromVersion.phase);
+  lcd.print(F(".")); 
   lcd.print(memory.eepromVersion.iteration);
   lcd.setCursor(9, 0);
   lcd.print(F("Uptime:")); 

@@ -74,7 +74,7 @@ struct VersionInfo
 namespace SystemVersion 
 {
   // Stable > Release Candidate > Beta > Alpha
-  constexpr VersionInfo FIRMWARE      = {1, 6, 0, 'B', 1};
+  constexpr VersionInfo FIRMWARE      = {1, 6, 0, 'B', 2};
   constexpr VersionInfo MIN_SUPPORTED = {1, 5, 0, 'S', 0};
 }
 
